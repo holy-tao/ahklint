@@ -1,0 +1,52 @@
+name: Build Tree-sitter DLLs
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build DLLs
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout tree-sitter runtime
+        uses: actions/checkout@v6
+        with:
+          repository: tree-sitter/tree-sitter
+          ref: v0.26.9
+          path: _tree-sitter
+
+      - name: Checkout tree-sitter-autohotkey grammar
+        uses: actions/checkout@v6
+        with:
+          repository: holy-tao/tree-sitter-autohotkey
+          path: _tree-sitter-autohotkey
+
+      - name: Set up Tree-sitter CLI
+        uses: tree-sitter/setup-action@v2
+        with:
+          install-lib: false
+          tree-sitter-ref: v0.26.9
+
+      - name: Build tree-sitter.dll
+        working-directory: _tree-sitter
+        shell: pwsh
+        run: |
+          cmake -S . -B build -A x64 -DBUILD_SHARED_LIBS=ON -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON
+          cmake --build build --config Release
+          Copy-Item build\Release\tree-sitter.dll "${{ github.workspace }}\tree-sitter.dll"
+
+      - name: Build tree-sitter-autohotkey.dll
+        working-directory: _tree-sitter-autohotkey
+        shell: pwsh
+        run: |
+          tree-sitter generate
+          tree-sitter build -o "${{ github.workspace }}\tree-sitter-autohotkey.dll"
+
+      - name: Upload DLLs
+        uses: actions/upload-artifact@v4
+        with:
+          name: tree-sitter-dlls
+          path: "*.dll"
+          if-no-files-found: error

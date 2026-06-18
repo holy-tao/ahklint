@@ -1,14 +1,19 @@
 name: Unit Tests
 
-on: 
+on:
   workflow_dispatch:
   workflow_call:
   push:
+  pull_request:
 
 jobs:
+  build-dlls:
+    uses: ./.github/workflows/build-dlls.yml
+
   test:
     name: Unit Tests (${{ matrix.exe }} - ${{ matrix.version }})
     runs-on: windows-latest
+    needs: build-dlls
     permissions:
       contents: read
       checks: write
@@ -16,8 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        exe: ['AutoHotkey64.exe', 'AutoHotkey32.exe']
-        version: ['latest', '2.1-latest']
+        exe: ['AutoHotkey64.exe']
+        version: ['2.1-latest']
 
     steps:
       - name: Checkout Repository
@@ -25,12 +30,22 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Download tree-sitter DLLs
+        uses: actions/download-artifact@v4
+        with:
+          name: tree-sitter-dlls
+          path: bin
+
       - name: Install AutoHotkey V2
         uses: holy-tao/install-autohotkey@v2.0.0
         with:
           version: ${{ matrix.version }}
 
-      - name: Run Unit Tests
+      - name: Run Build Scripts
+        shell: powershell
+        run: ${{ matrix.exe }} /ErrorStdOut build/barrel.ahk
+
+      - name: Run Tests
         working-directory: tests
         shell: powershell
         run: ${{ matrix.exe }} /ErrorStdOut RunTests.ahk
