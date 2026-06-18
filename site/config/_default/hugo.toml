@@ -1,0 +1,24 @@
+# Hugo config for the ahklint docs site.
+#
+# baseURL + the per-page `url: /lints/<id>/` front-matter (emitted by
+# build/compile-docs.ahk) must agree with DOCS_BASE in ../../Docs.ahk, so the
+# URL the linter prints resolves to a real page.
+baseURL = "https://holy-tao.github.io/ahklint/"
+title   = "ahklint"
+theme   = "book"
+
+# Chroma ships an `autohotkey` lexer, so the ```autohotkey fences in lint docs
+# are highlighted out of the box (the reason we use Hugo over Jekyll/Rouge).
+[markup.highlight]
+  noClasses = false
+  style     = "github"
+
+[markup.goldmark.renderer]
+  unsafe = true   # allow the raw <url> autolinks in generated "See also" lists
+
+[params]
+  # hugo-book builds its sidebar menu from this section (default "docs").
+  BookSection = "lints"
+  BookTheme   = "auto"
+  BookSearch  = true
+  BookToC     = true

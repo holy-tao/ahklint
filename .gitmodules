@@ -6,3 +6,6 @@
 	path = lib/tree-sitter
 	url = git@github.com:holy-tao/tree-sitter.ahk.git
 	branch = feat/v2.1-support
+[submodule "site/themes/book"]
+	path = site/themes/book
+	url = https://github.com/alex-shpak/hugo-book.git

@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
+#Import "./Docs.ahk" { DocsUrl }
+
 /**
  * A single lint finding. Field names mirror an LSP Diagnostic closely enough
  * that an editor integration can map onto it later (see DESIGN.md "Report shape").
@@ -13,7 +15,7 @@ export class Diagnostic {
     __New(meta, node, message) {
         this.code     := meta.id          ; lint id           -> LSP `code`
         this.severity := meta.severity    ; TODO: config overrides this default
-        this.docs     := meta.docs        ; doc URL           -> LSP `codeDescription.href`
+        this.docs     := DocsUrl(meta.id) ; doc URL (derived)  -> LSP `codeDescription.href`
         this.message  := message
 
         ; Keep both span forms: byte offsets for slicing source, row/col for editors.

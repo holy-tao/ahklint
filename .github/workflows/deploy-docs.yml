@@ -1,0 +1,82 @@
+name: Deploy Docs
+
+# Builds the lint docs site and publishes it to GitHub Pages.
+#
+# The site is assembled in two steps: AHK merges each lint's `meta` with its
+# sibling .md prose into Hugo content (build/compile-docs.ahk), then Hugo renders
+# it. compile-docs only reads static `meta` (it never instantiates a lint or the
+# parser), so the tree-sitter DLLs are not needed here.
+#
+# This is the Actions-based Pages deployment, NOT the legacy build-from-/docs
+# mode - the latter can't run the AHK pre-step. Enable Pages with source
+# "GitHub Actions" on the repo once (Settings -> Pages).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a newer push supersede an in-flight deploy, but never cancel a run that is
+# mid-deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Site
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive   # hugo-book theme + lint submodules
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Install AutoHotkey V2
+        uses: holy-tao/install-autohotkey@v2.0.0
+        with:
+          version: '2.1-latest'
+
+      - name: Generate lint barrel
+        shell: powershell
+        run: AutoHotkey64.exe /ErrorStdOut build/barrel.ahk
+
+      - name: Compile lint docs
+        shell: powershell
+        run: AutoHotkey64.exe /ErrorStdOut build/compile-docs.ahk
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build with Hugo
+        shell: powershell
+        run: hugo --source site --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/public
+
+  deploy:
+    name: Deploy to Pages
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

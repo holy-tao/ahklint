@@ -12,7 +12,6 @@ class OneRequires {
         severity:    "warn",
         fixable:     "none",
         recommended: true,
-        docs:        "https://ahklint.dev/lints/one-requires",
         references:  [
             "https://www.autohotkey.com/docs/v2/lib/_Requires.htm",
             "https://www.autohotkey.com/docs/v2/Program.htm#launcher"
