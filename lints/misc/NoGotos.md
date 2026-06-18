@@ -9,6 +9,7 @@ The use of `goto` is discouraged because it generally makes scripts less readabl
 
 ### Incorect
 ```autohotkey test
+#Requires AutoHotkey v2.0
 goto label ;~ no-goto
 
 label:
