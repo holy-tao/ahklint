@@ -12,7 +12,6 @@ class NoGotos {
         severity:    "warn",
         fixable:     "none",
         recommended: true,
-        docs:        "https://ahklint.dev/lints/no-goto",
         references:  [
             "https://www.autohotkey.com/docs/v2/lib/Goto.htm"
         ]
