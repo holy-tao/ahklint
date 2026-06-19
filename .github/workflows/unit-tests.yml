@@ -7,6 +7,17 @@ on:
   pull_request:
 
 jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Run markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: '**/*.md'
+
   build-dlls:
     uses: ./.github/workflows/build-dlls.yml
 
