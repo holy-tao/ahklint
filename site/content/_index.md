@@ -3,8 +3,6 @@ title: ahklint
 type: docs
 ---
 
-# ahklint
-
 An AutoHotkey v2 / v2.1 linter.
 
 > [!IMPORTANT]

@@ -1,2 +1,6 @@
-# ahk-template
-Template repository I use for AutoHotkey projects. It has configuration set up to run labellers and unit tests on pull requests, and has a personal fork of YUnit set up in the tests directory.
+# ahklint
+
+An AutoHotkey v2 / v2.1 linter.
+
+> [!IMPORTANT]
+> This system and page is under construction. I don't know how you got here, but don't take it too seriously.
