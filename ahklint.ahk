@@ -11,6 +11,9 @@
 
 ;@Ahk2Exe-ConsoleApp
 
+stdout := FileOpen("*", "w")
+stderr := FileOpen("**", "w")
+
 main()
 
 /**
@@ -18,22 +21,12 @@ main()
  * Parses one file, prints diagnostics, exits non-zero if any were found.
  */
 main() {
-    stdout := FileOpen("*", "w")
-    stderr := FileOpen("**", "w")
 
     args := ParseArgs(A_Args, stderr)   ; { file, configPath, target }
 
     filepath := args.file
-    if (filepath == "") {
-        ; TODO if filepath is a directory, scan it and all subdirectories for .ahk files
-        if !A_IsCompiled {
-            ; Allow usage from e.g. VSCode without wrangling the command line
-            filepath := FileSelect("1", A_WorkingDir, "Select a file to lint", "AutoHotkey scripts (*.ahk)")
-        } else {
-            stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] <file.ahk>")
-            ExitApp(2)
-        }
-    }
+    if (filepath == "") 
+        filepath := A_WorkingDir
 
     if !FileExist(filepath) {
         stderr.WriteLine("ahklint: no such file: " filepath)
@@ -42,14 +35,44 @@ main() {
 
     cfg := LoadConfig(args, filepath, stderr)
 
+    diagnostics := 0
+
+    if InStr(FileGetAttrib(filepath), "D") {
+        ; Directory - lint all files in it and subdirectories
+        loop files GetFullPathName(filepath) "\*.ahk", "r" {
+            stdout.WriteLine(Format("Linting {1}...", A_LoopFilePath))
+            diagnostics += LintFile(A_LoopFileFullPath, cfg)
+        }
+    }
+    else {
+        diagnostics := LintFile(GetFullPathName(filepath), cfg)
+    }
+
+    ExitApp(diagnostics > 0 ? 1 : 0)
+}
+
+/**
+ * Lints the given file
+ * 
+ * @param {String} filepath path of the file to lint 
+ * @returns {Integer} the number of diagnostics emitted
+ */
+LintFile(filepath, cfg) {
     source := FileRead(filepath, "RAW")
     diagnostics := Linter(AutoHotkeyLang(), source, cfg).Run()
 
     for diag in diagnostics
         stdout.WriteLine(diag.Format(filepath))
 
-    stdout.WriteLine(Format("`n{1} problem(s)", diagnostics.Length))
-    ExitApp(diagnostics.Length ? 1 : 0)
+    stdout.WriteLine(Format("{1} problem(s)", diagnostics.Length))
+    return diagnostics.Length
+}
+
+GetFullPathName(path) {
+    cc := DllCall("GetFullPathName", "str", path, UInt32, 0, IntPtr, 0, IntPtr, 0, UInt32)
+    buf := Buffer(cc*2)
+    DllCall("GetFullPathName", "str", path, UInt32, cc, IntPtr, buf.ptr, IntPtr, 0)
+    return StrGet(buf)
 }
 
 /**
