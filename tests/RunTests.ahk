@@ -5,7 +5,10 @@
 #Import "./YUnit/JUnit.ahk" { YUnitJUnit as JUnit }
 
 #Import "../AutoHotkeyLang.ahk" { AutoHotkeyLang }
-#Import "../Linter.ahk" { Linter }
+#Import "../Linter.ahk" { Linter, DEFAULT_TARGET }
+#Import "../lints/all.ahk" { ALL_LINTS }
+
+#Include "./UnitTests.ahk"
 
 #DllLoad "../bin/tree-sitter-autohotkey.dll"
 #DllLoad "../bin/tree-sitter.dll"
@@ -18,6 +21,8 @@ junitWriter := JUnit(0)
 loop files "../lints/*.md", "fr" {
 	TestFile(A_LoopFileFullPath, junitWriter, lang)
 }
+
+RunUnitTests(junitWriter)
 
 stdout.WriteLine(Format("`n{1} test(s): {2} passed, {3} failed",
 	junitWriter.tests.overall, junitWriter.tests.pass, junitWriter.tests.fail))
@@ -98,6 +103,7 @@ RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints) {
 		Fail(writer, relPath, testName, filepath, startLine,
 			"linter threw while checking block: " e.message, e.stack)
 		stdout.WriteLine(Format("  🚨 ERROR {1}: {2} ({3})", testName, e.message, e.extra))
+		stdout.WriteLine("    " StrReplace(e.Stack, "`n", "`n    "))
 		return
 	}
 
@@ -131,7 +137,10 @@ RunLints(lang, code) {
 	StrPut(code, buf, "UTF-8")
 	buf.Size -= 1					; drop the terminator from the parsed range
 
-	return Linter(lang, buf).Run()
+	cfg := Config.Default(ALL_LINTS, "")
+	DefineProp(cfg, "UNIT_TEST_RUN", { value: true })
+
+	return Linter(lang, buf, cfg).Run()
 }
 
 /**

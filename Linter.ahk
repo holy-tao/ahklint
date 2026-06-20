@@ -4,7 +4,10 @@
 #Import "lib/tree-sitter/src/util/Visitor.ahk" as Visitor
 
 #Import "./Diagnostic.ahk" { Diagnostic }
+#Import "./Config.ahk" { Config }
 #Import "./lints/all.ahk" { ALL_LINTS }
+
+export global DEFAULT_TARGET := "2.0.26"
 
 /**
  * The lint engine. Owns the parse tree, instantiates the enabled lints, walks
@@ -21,11 +24,15 @@ export class Linter extends Visitor {
     /**
      * @param {Language} lang the tree-sitter language to parse with
      * @param {Buffer} source the file contents (read as "RAW")
+     * @param {Config} configMap resolved config; defaults to the recommended preset
+     *        at DEFAULT_TARGET when omitted (used by tests and ad-hoc callers)
      */
-    __New(lang, source) {
+    __New(lang, source, cfg?) {
         this._parser := Parser(lang)
         this._source := source
-        this._tree   := this._parser.Parse(source)   ; keep alive: nodes read from it
+        this._config := cfg ?? Config.Default(ALL_LINTS, DEFAULT_TARGET)
+        this.ahkVersion := this._config.target
+        this._tree := this._parser.Parse(source)   ; keep alive: nodes read from it
         this._diagnostics := []
         this._lints := []
 
@@ -34,7 +41,13 @@ export class Linter extends Visitor {
         ; Construction phase: each lint registers its listeners. Afterwards the
         ; context is sealed so listeners can't change mid-walk
         for cls in ALL_LINTS {
-            ; TODO: skip lints by meta.versions / config severity here
+            meta := cls.meta
+            ; undocumented config option to run everything
+            if !A_IsCompiled && !HasProp(cfg, "UNIT_TEST_RUN") {
+               if (this._config.SeverityFor(meta.id) == "off") || !VerCompare(this._config.target, meta.versions)
+                   continue
+            }
+
             this._lints.Push(cls(this))
         }
         this._sealed := true
@@ -55,7 +68,8 @@ export class Linter extends Visitor {
      * @param {String} message the message to show
      */
     Report(meta, node, message) {
-        this._diagnostics.Push(Diagnostic(meta, node, message))
+        severity := this._config.SeverityFor(meta.id)   ; config wins over meta.severity
+        this._diagnostics.Push(Diagnostic(meta, node, message, severity))
     }
 
     OnEnter(nodeType, callback, addRemove := 1) {

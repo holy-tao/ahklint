@@ -11,10 +11,12 @@ export class Diagnostic {
      * @param {Object} meta the reporting lint's static `meta`
      * @param {Node} node the tree-sitter node the finding is anchored to
      * @param {String} message the human-readable message
+     * @param {String} severity resolved severity; defaults to meta.severity when
+     *        a caller (or test) doesn't pass a config-resolved value
      */
-    __New(meta, node, message) {
+    __New(meta, node, message, severity?) {
         this.code     := meta.id          ; lint id           -> LSP `code`
-        this.severity := meta.severity    ; TODO: config overrides this default
+        this.severity := IsSet(severity) ? severity : meta.severity  ; config wins (Linter.Report)
         this.docs     := DocsUrl(meta.id) ; doc URL (derived)  -> LSP `codeDescription.href`
         this.message  := message
 

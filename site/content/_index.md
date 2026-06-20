@@ -13,3 +13,8 @@ An AutoHotkey v2 / v2.1 linter.
 
 Every diagnostic links here, to the page for the lint that produced it. Browse
 the full set under **[Lints]({{< relref "/lints" >}})**.
+
+## See Also
+
+- **[Configuration]({{< relref "/config" >}})**
+- **[AhkLint on GitHub](https://github.com/holy-tao/ahklint)**
