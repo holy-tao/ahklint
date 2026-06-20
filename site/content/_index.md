@@ -3,6 +3,9 @@ title: ahklint
 type: docs
 ---
 
+<!-- markdownlint-disable-next-line MD025 -->
+# AhkLint
+
 An AutoHotkey v2 / v2.1 linter.
 
 > [!IMPORTANT]
