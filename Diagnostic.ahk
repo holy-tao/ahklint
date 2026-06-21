@@ -31,7 +31,7 @@ export class Diagnostic {
      * Human-readable output for the console
      */
     Format(file) {
-        str := Format("{1} [{2}] {3}:`n", file, this.code, this.severity)
+        str := Format("{1} @ ({2}, {3}) [{4}] {5}:`n", file, this.start.row, this.start.column, this.code, this.severity)
         str .= "Line |`n"
         str .= Format("{1:4} | {2}`n", this.start.row + 1, this._ReadLine(file, this.start.row + 1))
         str .= Format("     | {1}{2}`n",
@@ -46,7 +46,7 @@ export class Diagnostic {
         file := FileOpen(file, "r")
         loop (line - 1)
             file.ReadLine()
-        return file.ReadLine()
+        return StrReplace(file.ReadLine(), "`t", " ")
     }
 
     _StrRepeat(str, amt) {
