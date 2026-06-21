@@ -41,7 +41,7 @@ class UseConstantDllCalls {
 
         arg1 := FlattenNode(argSeq.GetNamedChild(0))
         if arg1.Type != "string_literal" {
-            linter.Report(UseConstantDllCalls.meta, arg1, "Use constant string literals to identify DllCall functions.")
+            linter.Report(UseConstantDllCalls.meta, argSeq.GetNamedChild(0), "Use constant string literals to identify DllCall functions.")
         }
     }
 }
