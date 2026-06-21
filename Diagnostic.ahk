@@ -50,7 +50,7 @@ export class Diagnostic {
     }
 
     _StrRepeat(str, amt) {
-        out := "", VarSetStrCapacity(&out, amt + 1)
+        out := "", VarSetStrCapacity(&out, Max(amt, 0) + 1)
         loop amt 
             out .= str
         return out 

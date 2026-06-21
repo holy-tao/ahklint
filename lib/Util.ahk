@@ -18,3 +18,19 @@ FlattenNode(node) {
     }
     return current
 }
+
+/**
+ * Find the first named child of `node` with type `type`. Throws an error
+ * if no such child is found
+ * @returns {TreeSitter.Node} the found node 
+ */
+GetChildOfType(node, type) {
+    loop node.NamedChildCount {
+        child := node.GetNamedChild(A_Index - 1)
+        if child.Type == type
+            return child
+    }
+
+    msg := Format("Node of type '{1}' has no child of type '{2}'", node.Type, type)
+    throw IndexError(msg, , node.NodeString)
+}
