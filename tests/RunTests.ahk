@@ -45,10 +45,21 @@ ExitApp(failed ? 1 : 0)
  */
 TestFile(filepath, writer, lang) {
 	static FENCE_START_PAT := "i)^``````\s*autohotkey\s+test"
-	static LINT_ID_PAT     := ";~\s+(?<lint>\S+)"
+	static LINT_ID_PAT     := ";~\s+(?<lint>\S+)(?:\s+(?<count>\d+))?"
 
 	relPath := writer.StripPathToRelative(filepath)
 	stdout.WriteLine("Scanning " relPath " ...")
+
+	; Derive the lint id for this .md from ALL_LINTS so we can filter out noise
+	; from other lints firing on examples that aren't about them.
+	SplitPath(filepath, , , , &stem)
+	lintId := ""
+	for cls in ALL_LINTS {
+		if cls.Prototype.__Class == stem {
+			lintId := cls.meta.id
+			break
+		}
+	}
 
 	testFile := FileOpen(filepath, "r")
 
@@ -70,7 +81,7 @@ TestFile(filepath, writer, lang) {
 		else if inCodeBlock {
 			if InStr(line, "``````") == 1 {
 				inCodeBlock := false
-				RunBlock(writer, lang, relPath, filepath, blockStartLine, acc, expectedLints)
+				RunBlock(writer, lang, relPath, filepath, blockStartLine, acc, expectedLints, lintId)
 
 				acc           := ""
 				expectedLints := []
@@ -79,8 +90,11 @@ TestFile(filepath, writer, lang) {
 			else {
 				blockline++
 				acc .= line "`r`n"
-				if RegExMatch(line, LINT_ID_PAT, &match)
-					expectedLints.Push({ lint: match["lint"], line: blockline })
+				if RegExMatch(line, LINT_ID_PAT, &match) {
+					count := match["count"] != "" ? Integer(match["count"]) : 1
+					loop count
+						expectedLints.Push({ lint: match["lint"], line: blockline })
+				}
 			}
 		}
 	}
@@ -93,7 +107,7 @@ TestFile(filepath, writer, lang) {
  * Lint a single block and record one test case. A failure lists every mismatch
  * between the diagnostics that fired and the markers in the block.
  */
-RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints) {
+RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints, lintId := "") {
 	testName := "block@line" startLine
 	t0 := A_TickCount
 
@@ -105,6 +119,14 @@ RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints) {
 		stdout.WriteLine(Format("  🚨 ERROR {1}: {2} ({3})", testName, e.message, e.extra))
 		stdout.WriteLine("    " StrReplace(e.Stack, "`n", "`n    "))
 		return
+	}
+
+	if lintId != "" {
+		filtered := []
+		for diag in diagnostics
+			if diag.code == lintId
+				filtered.Push(diag)
+		diagnostics := filtered
 	}
 
 	failures := CompareDiagnostics(diagnostics, expectedLints, startLine)
