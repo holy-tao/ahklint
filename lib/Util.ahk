@@ -34,3 +34,25 @@ GetChildOfType(node, type) {
     msg := Format("Node of type '{1}' has no child of type '{2}'", node.Type, type)
     throw IndexError(msg, , node.NodeString)
 }
+
+/**
+ * Get the nth argument of a function, or `unset` if it does not exist
+ * @param {TreeSitter.Node} fnNode 
+ * @param {Integer} argIndex 
+ * @returns {TreeSitter.Node | Unset} 
+ */
+GetArg(fnNode, argIndex) {
+    ;@ahkbuild-ignorebegin
+    if !IsInteger(argIndex) || argIndex < 0 {
+        throw IndexError("arg index must be a non-negative integer", , argIndex)
+    }
+    ;@ahkbuild-ignoreend
+
+    argSeq := fnNode.GetChildByFieldName("arguments")
+    if argSeq.IsNull || (argSeq.NamedChildCount < argIndex + 1) {
+        return unset
+    }
+
+    arg := argSeq.GetNamedChild(argIndex)
+    return arg.IsNull ? unset : arg
+}
