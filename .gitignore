@@ -12,3 +12,4 @@ site/content/lints/
 site/public/
 site/resources/
 .hugo_build.lock
+site/assets/_chroma-*

@@ -16,6 +16,9 @@
  * invoking `hugo`. Run `barrel.ahk` first so ALL_LINTS is current.
  ***********************************************************************/
 
+#Warn VarUnset, StdOut
+#Warn Unreachable, StdOut
+
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
 #Include "./errshim.ahk"
@@ -29,18 +32,20 @@ contentDir := root "\site\content\lints"
 
 ; Start from a clean slate so a removed/renamed lint leaves no orphan page.
 ; Delete all subdirectories and the generated top-level _index.md.
+stdout.WriteLine("Cleaning up content directory...")
+_ := stdout.Handle
 if DirExist(contentDir) {
-    loop files contentDir "\*", "D"
-        DirDelete(A_LoopFileFullPath, true)
+    DirDelete(contentDir, true)
     if FileExist(contentDir "\_index.md")
         FileDelete(contentDir "\_index.md")
-} else {
-    DirCreate(contentDir)
 }
+DirCreate(contentDir)
 
 count      := 0
 byCategory := Map()   ; category -> Array of meta objects, preserves insertion order
 
+stdout.WriteLine("Compiling " ALL_LINTS.Length " lint docs...")
+_ := stdout.Handle
 for cls in ALL_LINTS {
     meta      := cls.meta
     className := cls.Prototype.__Class
@@ -68,6 +73,7 @@ for cls in ALL_LINTS {
     outFile.Close()
 
     stdout.WriteLine(Format("  {1} -> lints/{2}/{3}.md", className, meta.category, meta.id))
+    _ := stdout.Handle
     count++
 }
 

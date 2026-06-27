@@ -14,6 +14,10 @@ name: Deploy Docs
 on:
   push:
     branches: [main]
+    paths:
+      - site/**
+      - lints/**.md
+      - .github/workflows/deploy-docs.md
   workflow_dispatch:
 
 permissions:
@@ -48,11 +52,15 @@ jobs:
 
       - name: Generate lint barrel
         shell: powershell
-        run: AutoHotkey64.exe /ErrorStdOut build/barrel.ahk
+        run: |
+          AutoHotkey64.exe /ErrorStdOut build/barrel.ahk | Out-Host
+          Write-Output "LASTEXITCODE=[$LASTEXITCODE]"
 
       - name: Compile lint docs
         shell: powershell
-        run: AutoHotkey64.exe /ErrorStdOut build/compile-docs.ahk
+        run: |
+          AutoHotkey64.exe /ErrorStdOut build/compile-docs.ahk | Out-Host
+          Write-Output "LASTEXITCODE=[$LASTEXITCODE]"
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
@@ -61,8 +69,13 @@ jobs:
           extended: true
 
       - name: Build with Hugo
-        shell: powershell
-        run: hugo --source site --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
+        shell: pwsh
+        working-directory: site
+        run: |
+          hugo gen chromastyles --style=github > assets/_chroma-light.scss
+          hugo gen chromastyles --style=nord > assets/_chroma-dark.scss
+
+          hugo --minify --baseURL "${{ steps.pages.outputs.base_url }}/"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
