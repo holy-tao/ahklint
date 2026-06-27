@@ -11,14 +11,14 @@ jobs:
 
     steps:
       - name: Checkout tree-sitter runtime
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: tree-sitter/tree-sitter
           ref: v0.26.9
           path: _tree-sitter
 
       - name: Checkout tree-sitter-autohotkey grammar
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: holy-tao/tree-sitter-autohotkey
           path: _tree-sitter-autohotkey
