@@ -3,6 +3,9 @@
  * .ahk files
  ***********************************************************************/
 
+#Warn VarUnset, StdOut
+#Warn Unreachable, StdOut
+
 #Include "./errshim.ahk"
 
 A_WorkingDir := A_WorkingDir "/../lints"
