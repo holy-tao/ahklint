@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "package": [
+    {
+      "name": "cJson",
+      "source": "git+git@github.com:G33kDude/cJson.ahk.git?rev=ea5313ce0e5e79aadcb367e7167c1da991717de3",
+      "resolved": "ea5313ce0e5e79aadcb367e7167c1da991717de3",
+      "checksum": "sha256:b48e5186be920adf77d169870637610932cc1f0a702b9ec63834b8a40c10f020"
+    },
+    {
+      "name": "tree-sitter.ahk",
+      "source": "git+git@github.com:holy-tao/tree-sitter.ahk.git?branch=feat/v2.1-support",
+      "resolved": "3f42d3544a8d950166da9696a7b60ca6252ea0f0",
+      "checksum": "sha256:9bf74dee8b8fb4b6d924ebc72c2a2a4bdde260e3b578bffe041b0c6f2dffd148"
+    }
+  ]
+}

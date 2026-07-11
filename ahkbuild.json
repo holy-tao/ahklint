@@ -24,5 +24,18 @@
             ["${AHK}", "/ErrorStdOut=UTF-8", "/Validate", "${AHKBUILD_ENTRY}"]
         ],
         "post-bundle": []
+  },
+  "dependencies": {
+    "cJson": {
+      "git": "git@github.com:G33kDude/cJson.ahk.git",
+      "rev": "ea5313ce0e5e79aadcb367e7167c1da991717de3",
+      "subdir": "dist"
+    },
+    "tree-sitter.ahk": {
+      "git": "git@github.com:holy-tao/tree-sitter.ahk.git",
+      "alias": "treesitter",
+      "branch": "feat/v2.1-support",
+      "subdir": "src"
+    }
   }
 }

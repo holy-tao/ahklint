@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
-#Import "lib/tree-sitter" { Parser }
-#Import "lib/tree-sitter/src/util/Visitor.ahk" as Visitor
+#Import "tree-sitter.ahk" { Parser }
+#Import "tree-sitter.ahk/util/Visitor.ahk" as Visitor
 
 #Import "./Diagnostic.ahk" { Diagnostic }
 #Import "./Config.ahk" { Config }

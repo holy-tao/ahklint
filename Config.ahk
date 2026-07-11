@@ -1,8 +1,6 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
-; JSON.ahk is a plain v2.0 class (no `export`); it can still be imported by
-; naming it explicitly - `export` only affects wildcard imports.
-#Import "lib/JSON.ahk" { JSON }
+#Import "cJson\JSON.ahk" { JSON }
 
 /**
  * Resolved linter configuration: the single source of truth for which lints run

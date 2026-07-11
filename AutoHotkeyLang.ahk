@@ -1,6 +1,6 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
-#Import "lib/tree-sitter" { Language }
+#Import treesitter { Language }
 
 /**
  * The tree-sitter-autohotkey grammar exposed as a Language. The backing DLL is
