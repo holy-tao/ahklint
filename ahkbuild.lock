@@ -2,6 +2,18 @@
   "version": 1,
   "package": [
     {
+      "name": "AhkExtensions",
+      "source": "git+git@github.com:holy-tao/AhkExtensions.git",
+      "resolved": "b46a9b40b9e3587e85304f27af80b1eeb641cee6",
+      "checksum": "sha256:ed5748bc24be15e72871ed07a6c6e25d401ab4e583682ebb54eaf6649072410f"
+    },
+    {
+      "name": "ahkcollections",
+      "source": "git+git@github.com:holy-tao/ahkcollections.git",
+      "resolved": "452c15d50a734370c3d94002f34ca2ff43ce41a5",
+      "checksum": "sha256:88adf867d26fbe60b79057652b24881bc7198f091ff4390f4177d88f433dfda8"
+    },
+    {
       "name": "cJson",
       "source": "git+git@github.com:G33kDude/cJson.ahk.git?rev=ea5313ce0e5e79aadcb367e7167c1da991717de3",
       "resolved": "ea5313ce0e5e79aadcb367e7167c1da991717de3",
@@ -10,8 +22,8 @@
     {
       "name": "tree-sitter.ahk",
       "source": "git+git@github.com:holy-tao/tree-sitter.ahk.git?branch=feat/v2.1-support",
-      "resolved": "3f42d3544a8d950166da9696a7b60ca6252ea0f0",
-      "checksum": "sha256:9bf74dee8b8fb4b6d924ebc72c2a2a4bdde260e3b578bffe041b0c6f2dffd148"
+      "resolved": "00bbedf885772592b0b8d3bd6e9c414754317d80",
+      "checksum": "sha256:9bd631f9d075c05e3f693d9059acf29e63c320c4fd5ab2009a27dd8662e35834"
     }
   ]
 }

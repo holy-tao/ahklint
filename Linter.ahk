@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
-#Import "tree-sitter.ahk" { Parser }
-#Import "tree-sitter.ahk/util/Visitor.ahk" as Visitor
+#Import treesitter { Parser }
+#Import "treesitter/util" { Visitor }
 
 #Import "./Diagnostic.ahk" { Diagnostic }
 #Import "./Config.ahk" { Config }
@@ -74,12 +74,24 @@ export class Linter extends Visitor {
 
     OnEnter(nodeType, callback, addRemove := 1) {
         this._AssertUnsealed()
-        super.OnEnter(nodeType, callback, addRemove)
+        if nodeType is Array {
+            for t in nodeType {
+                super.OnEnter(t, callback, addRemove)
+            }
+        } else {
+            super.OnEnter(nodeType, callback, addRemove)
+        }
     }
 
     OnExit(nodeType, callback, addRemove := 1) {
         this._AssertUnsealed()
-        super.OnExit(nodeType, callback, addRemove)
+        if nodeType is Array {
+            for t in nodeType {
+                super.OnExit(t, callback, addRemove)
+            }
+        } else {
+            super.OnExit(nodeType, callback, addRemove)
+        }
     }
 
     _AssertUnsealed() {

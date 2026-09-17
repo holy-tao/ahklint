@@ -1,5 +1,8 @@
 #Requires AutoHotkey v2.1-alpha.30
 
+#Import "extensions/ArrayExtensions"
+#Import treesitter { Node }
+
 /**
  * Given a tree-sitter node, return its first named child which has more than one
  * child node or which is a leaf node. If the node itself has multiple children
@@ -22,7 +25,7 @@ FlattenNode(node) {
 /**
  * Find the first named child of `node` with type `type`. Throws an error
  * if no such child is found
- * @returns {TreeSitter.Node} the found node 
+ * @returns {Node} the found node 
  */
 GetChildOfType(node, type) {
     loop node.NamedChildCount {
@@ -37,9 +40,9 @@ GetChildOfType(node, type) {
 
 /**
  * Get the nth argument of a function, or `unset` if it does not exist
- * @param {TreeSitter.Node} fnNode 
+ * @param {Node} fnNode 
  * @param {Integer} argIndex 
- * @returns {TreeSitter.Node | Unset} 
+ * @returns {Node | Unset} 
  */
 GetArg(fnNode, argIndex) {
     ;@ahkbuild-ignorebegin
@@ -56,3 +59,7 @@ GetArg(fnNode, argIndex) {
     arg := argSeq.GetNamedChild(argIndex)
     return arg.IsNull ? unset : arg
 }
+
+FirstNamedChildOfType(parent, type) => 
+    parent.GetNamedChildren()
+    .FirstOrDefault(child => child.type == type, Node())
