@@ -1,6 +1,7 @@
-[SendPlay] mode is deprecated and should never be used. Scripts should use one of the other [sending mode]s instead
+[SendPlay] mode is deprecated and should never be used. Scripts should use one of the other [sending mode]s instead.
+Per the AutoHotkey documentation:
 
-> [!ERROR]
+> [!WARNING]
 > SendPlay does not tend to work if [User Account Control (UAC)] is enabled, even if the script is running as an
 > administrator. For more information, refer to the [FAQ](https://www.autohotkey.com/docs/alpha/FAQ.htm#uac). On
 > Windows 11 and later, SendPlay may have no effect at all.

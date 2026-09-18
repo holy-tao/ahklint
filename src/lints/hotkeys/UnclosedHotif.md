@@ -1,4 +1,4 @@
-All [`#HotIf`] directive should be closed by either another `#HotIf` directive or a blank `#HotIf` directive. An
+All [`#HotIf`] directives should be closed by either another `#HotIf` directive or a blank `#HotIf` directive. An
 unclosed `#HotIf` could have unintended effects on hotkeys or hotstrings defined in scripts that include the script
 with the unclosed directive.
 
