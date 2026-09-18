@@ -44,11 +44,12 @@ export class Linter extends Visitor {
             meta := cls.meta
             ; undocumented config option to run everything
             if !A_IsCompiled && !HasProp(cfg, "UNIT_TEST_RUN") {
-               if (this._config.SeverityFor(meta.id) == "off") || !VerCompare(this._config.target, meta.versions)
+               if !VerCompare(this._config.target, meta.versions)
                    continue
             }
 
-            this._lints.Push(cls(this))
+            if this._config.SeverityFor(meta.id) != "off"
+                this._lints.Push(cls(this))
         }
         this._sealed := true
     }
