@@ -4,10 +4,10 @@
 #DllLoad "./bin/tree-sitter.dll"
 #DllLoad "./bin/tree-sitter-autohotkey.dll"
 
-#Import "./Linter.ahk" { Linter, DEFAULT_TARGET }
-#Import "./AutoHotkeyLang.ahk" { AutoHotkeyLang }
-#Import "./Config.ahk" { Config }
-#Import "./lints/all.ahk" { ALL_LINTS }
+#Import "./src/Linter.ahk" { Linter, DEFAULT_TARGET }
+#Import "./src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
+#Import "./src/Config.ahk" { Config }
+#Import "./src/lints/all.ahk" { ALL_LINTS }
 
 ;@Ahk2Exe-ConsoleApp
 
@@ -110,6 +110,8 @@ ParseArgs(argv, stderr) {
  * --target flag > config "target" > DEFAULT_TARGET (with a one-line notice).
  * Config is discovered by walking up from the linted file unless --config is
  * given. Any config error (bad JSON, unknown lint id/preset) exits 2.
+ * 
+ * @returns {Config} the loaded config
  */
 LoadConfig(args, filepath, stderr) {
     try {

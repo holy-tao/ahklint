@@ -4,8 +4,8 @@
 ; non-doc-derived logic that the example fixtures (RunTests.ahk) can't cover.
 ; Recorded into the same JUnit writer so they share junit.xml and the exit code.
 
-#Import "../Config.ahk" { Config }
-#Import "../Linter.ahk" { DEFAULT_TARGET }
+#Import "../src/Config.ahk" { Config }
+#Import "../src/Linter.ahk" { DEFAULT_TARGET }
 
 ; Controlled lints so resolution is deterministic regardless of the real set.
 

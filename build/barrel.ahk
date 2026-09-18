@@ -1,5 +1,5 @@
 /************************************************************************
- * This script compiles `all.ahk` by scanning the lints/ directory for 
+ * This script compiles `all.ahk` by scanning the src/lints/ directory for
  * .ahk files
  ***********************************************************************/
 
@@ -8,7 +8,7 @@
 
 #Include "./errshim.ahk"
 
-A_WorkingDir := A_WorkingDir "/../lints"
+A_WorkingDir := A_ScriptDir "\..\src\lints"
 
 stdout := FileOpen("*", "w")
 

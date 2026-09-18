@@ -16,8 +16,8 @@ on:
     branches: [main]
     paths:
       - site/**
-      - lints/**.md
-      - .github/workflows/deploy-docs.md
+      - src/lints/**.md
+      - .github/workflows/deploy-docs.yml
   workflow_dispatch:
 
 permissions:

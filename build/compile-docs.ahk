@@ -9,7 +9,7 @@
  *   site/content/lints/<category>/_index.md - per-category lint list
  *
  * `meta` can only be read by running AHK, so this imports the generated
- * barrel (lints/all.ahk) for ALL_LINTS. Importing a class does not call its
+ * barrel (src/lints/all.ahk) for ALL_LINTS. Importing a class does not call its
  * __New, so no tree-sitter instantiation happens here.
  *
  * Generated pages are not committed (.gitignore); CI regenerates them before
@@ -22,13 +22,13 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
 #Include "./errshim.ahk"
-#Import "../lints/all.ahk" { ALL_LINTS }
+#Import "../src/lints/all.ahk" { ALL_LINTS }
 #Import "cJson\JSON.ahk" { JSON }
 
 stdout := FileOpen("*", "w", "UTF-8")
 
 root       := A_ScriptDir "\.."
-lintsDir   := root "\lints"
+lintsDir   := root "\src\lints"
 contentDir := root "\site\content\lints"
 
 ; Start from a clean slate so a removed/renamed lint leaves no orphan page.

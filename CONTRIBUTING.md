@@ -75,7 +75,7 @@ __New(linter) {
 
 Documentation and tests live beside the lint classes in `<lint-name>.md` files.
 
-The linter test harness pulls test cases from the .md documentation files in the [lints](../lints/) directory. Any
+The linter test harness pulls test cases from the .md documentation files in the [lints](src/lints/) directory. Any
 fenced autohotkey code block can be a test if it has the fence-open `autohotkey test` (case-insensitive). A test
 identifies the lints it expects to fire with the syntax `;~ <lint-name>`.
 

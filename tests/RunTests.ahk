@@ -5,9 +5,9 @@
 #Import "./YUnit/JUnit.ahk" { YUnitJUnit as JUnit }
 #Import "cJson\JSON.ahk" { JSON }
 
-#Import "../AutoHotkeyLang.ahk" { AutoHotkeyLang }
-#Import "../Linter.ahk" { Linter, DEFAULT_TARGET }
-#Import "../lints/all.ahk" { ALL_LINTS }
+#Import "../src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
+#Import "../src/Linter.ahk" { Linter, DEFAULT_TARGET }
+#Import "../src/lints/all.ahk" { ALL_LINTS }
 
 #Include "./UnitTests.ahk"
 
@@ -19,7 +19,7 @@ stdout := FileOpen("*", "w", "UTF-8")
 
 junitWriter := JUnit(0)
 
-loop files "../lints/*.md", "fr" {
+loop files "../src/lints/*.md", "fr" {
 	TestFile(A_LoopFileFullPath, junitWriter, lang)
 }
 

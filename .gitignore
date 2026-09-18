@@ -3,7 +3,7 @@ junit.xml
 bin/
 
 # Generated barrel not tracked
-lints/all.ahk
+src/lints/all.ahk
 
 # Docs site: generated per-lint pages and Hugo build artifacts. The Hugo
 # scaffold (config, theme) is tracked; the entire lints content dir is

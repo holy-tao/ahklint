@@ -8,7 +8,7 @@ like `MsgBox`, should print errors to stdout, and should return with nonzero exi
 
 ## Scripts
 
-- `barrel.ahk` — scans `lints/` and regenerates the `lints/all.ahk` barrel (the `ALL_LINTS` manifest the linter
+- `barrel.ahk` — scans `src/lints/` and regenerates the `src/lints/all.ahk` barrel (the `ALL_LINTS` manifest the linter
   imports). Run this first; the others depend on a current barrel.
 - `compile-docs.ahk` — merges each lint's static `meta` with its sibling `.md` prose into one Hugo page per lint under
   `site/content/lints/<category>/<id>.md`. Generated pages are gitignored; CI regenerates them before `hugo`. Fails if a

@@ -1,7 +1,7 @@
 # Hugo config for the ahklint docs site.
 #
 # baseURL + the per-page `url: /lints/<id>/` front-matter (emitted by
-# build/compile-docs.ahk) must agree with DOCS_BASE in ../../Docs.ahk, so the
+# build/compile-docs.ahk) must agree with DOCS_BASE in ../../src/Docs.ahk, so the
 # URL the linter prints resolves to a real page.
 baseURL = "https://holy-tao.github.io/ahklint/"
 title   = "ahklint"
