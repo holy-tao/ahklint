@@ -36,6 +36,15 @@ jobs:
     name: Build Site
     runs-on: windows-latest
     steps:
+      - name: Configure Rust Logging
+        shell: bash
+        run: |
+          if [ "${{ runner.debug }}" = "1" ]; then
+            echo "RUST_LOG=debug" >> $GITHUB_ENV
+          else
+            echo "RUST_LOG=info" >> $GITHUB_ENV
+          fi
+
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
@@ -45,22 +54,11 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
-      - name: Install AutoHotkey V2
-        uses: holy-tao/install-autohotkey@v2.1.0
-        with:
-          version: '2.1-latest'
+      - name: Setup ahkbuild
+        uses: ./.github/actions/setup-ahkbuild
 
-      - name: Generate lint barrel
-        shell: powershell
-        run: |
-          AutoHotkey64.exe /ErrorStdOut build/barrel.ahk | Out-Host
-          Write-Output "LASTEXITCODE=[$LASTEXITCODE]"
-
-      - name: Compile lint docs
-        shell: powershell
-        run: |
-          AutoHotkey64.exe /ErrorStdOut build/compile-docs.ahk | Out-Host
-          Write-Output "LASTEXITCODE=[$LASTEXITCODE]"
+      - run: ahkbuild run build/barrel.ahk
+      - run: ahkbuild run build/compile-docs.ahk
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3

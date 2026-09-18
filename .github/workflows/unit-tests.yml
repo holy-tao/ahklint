@@ -22,20 +22,24 @@ jobs:
     uses: ./.github/workflows/build-dlls.yml
 
   test:
-    name: Unit Tests (${{ matrix.exe }} - ${{ matrix.version }})
+    name: Unit Tests
     runs-on: windows-latest
     needs: build-dlls
     permissions:
       contents: read
       checks: write
       pull-requests: write
-    strategy:
-      fail-fast: false
-      matrix:
-        exe: ['AutoHotkey64.exe']
-        version: ['2.1-latest']
 
     steps:
+      - name: Configure Rust Logging
+        shell: bash
+        run: |
+          if [ "${{ runner.debug }}" = "1" ]; then
+            echo "RUST_LOG=debug" >> $GITHUB_ENV
+          else
+            echo "RUST_LOG=info" >> $GITHUB_ENV
+          fi
+
       - name: Checkout Repository
         uses: actions/checkout@v7
         with:
@@ -47,19 +51,11 @@ jobs:
           name: tree-sitter-dlls
           path: bin
 
-      - name: Install AutoHotkey V2
-        uses: holy-tao/install-autohotkey@v2.1.0
-        with:
-          version: ${{ matrix.version }}
+      - name: Setup ahkbuild
+        uses: ./.github/actions/setup-ahkbuild
 
-      - name: Run Build Scripts
-        shell: powershell
-        run: ${{ matrix.exe }} /ErrorStdOut build/barrel.ahk
-
-      - name: Run Tests
-        working-directory: tests
-        shell: powershell
-        run: ${{ matrix.exe }} /ErrorStdOut RunTests.ahk
+      - run: ahkbuild run build/barrel.ahk
+      - run: ahkbuild run tests/RunTests.ahk
 
       - name: Publish Test Results
         if: always()
@@ -68,6 +64,7 @@ jobs:
           report_paths: tests/junit.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           check_name: Test Results (${{ matrix.exe }} - ${{ matrix.version }})
+          require_passed_tests: true
 
   all-tests-passed:
     name: All Tests Passed
