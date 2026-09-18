@@ -13,6 +13,14 @@ MyFunction(param) {
 }
 ```
 
+```autohotkey test
+ClosureExample(arg) {
+    Closure() {
+        DoSomething(arg)
+    }
+}
+```
+
 If a parameter is intentionally unused (if, for example, it exists to conform to an interface), use `_` or prefix it
 with an underscore:
 
@@ -72,6 +80,19 @@ And [fat-arrow functions](https://www.autohotkey.com/docs/alpha/Variables.htm#fa
 
 class Example {
     static Method(unused) => "example" ;~ no-unused-params
+}
+```
+
+If a nested function declares a parameter with the same name, that parameter shadows the outer one. Uses of it do
+not count for the outer function:
+
+```autohotkey test
+#Requires AutoHotkey v2.0
+
+Bind(arg) { ;~ no-unused-params
+    inner(arg) {
+        DoSomething(arg)
+    }
 }
 ```
 

@@ -39,7 +39,19 @@ class NoUnusedParams {
             return
 
         nodeText := node.Text   ; node.Text is a DllCall behind the scenes, cache the response
+
+        ; Walk up the frame stack so that a closure's use of an outer function's
+        ; param counts for that outer function. The innermost frame that declares
+        ; the name wins, since an inner param of the same name shadows the outer one.
         frame := this.frames[-1]
+        i := this.frames.Length
+        while i >= 1 {
+            if this.frames[i].params.Has(nodeText) {
+                frame := this.frames[i]
+                break
+            }
+            i--
+        }
 
         if !frame.used.Has(nodeText)
             frame.used[nodeText] := 1
