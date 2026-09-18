@@ -41,6 +41,36 @@ class NoGotos {
 }
 ```
 
+### Options
+
+A lint that takes configuration declares its options in `meta.options`, keyed by option name. Each option needs a
+`type` (`"string"`, `"number"`, or `"boolean"`) and a `default`, and may restrict itself to an enum with `values`.
+The `description` is shown in the generated docs.
+
+``` autohotkey
+static meta => {
+    ; ...
+    options: {
+        style: {
+            type:        "string",
+            default:     "double",
+            values:      ["double", "single"],
+            description: "The quote character string literals should use."
+        }
+    }
+}
+```
+
+Read the resolved options in the constructor with `linter.Options(meta)`. Config validation rejects unknown options
+and bad values before any lint runs, and fills in defaults, so every declared option is always present:
+
+``` autohotkey
+__New(linter) {
+    this.style := linter.Options(QuoteStyle.meta).style
+    ; ...
+}
+```
+
 ### Documentation and Tests
 
 Documentation and tests live beside the lint classes in `<lint-name>.md` files.
@@ -61,7 +91,21 @@ MsgBox("At label!")
 ````
 
 Correct examples should simply omit any `;~ <lint-name>` markers. A test will fail if any unexpected lints fire or if
-any expected lints fail to fire.
+any expected lints fail to fire. Only the lint the `.md` documents is enabled while its examples run, so examples can
+be short snippets without tripping other lints.
+
+To test a lint with options, put a JSON options object after `test` on the fence. Blocks without one run with the
+defaults. In the generated docs, the fence becomes a plain `autohotkey` block and the options appear as a leading
+comment.
+
+````text
+``` autohotkey test {"style": "single"}
+MsgBox("Hello, World!") ;~ quote-style
+```
+````
+
+The docs build fails if a non-default option value (each of an enum's `values`, or the non-default side of a boolean)
+has no example.
 
 Your `lint.md` file is also used in the generated website and will be linked to in linter output. The doc URL is
 derived automatically from your `meta.id` (`https://holy-tao.github.io/ahklint/lints/<id>`) — don't add a `docs:`

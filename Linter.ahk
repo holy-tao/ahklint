@@ -43,7 +43,7 @@ export class Linter extends Visitor {
         for cls in ALL_LINTS {
             meta := cls.meta
             ; undocumented config option to run everything
-            if !A_IsCompiled && !HasProp(cfg, "UNIT_TEST_RUN") {
+            if !A_IsCompiled && !HasProp(this._config, "UNIT_TEST_RUN") {
                if !VerCompare(this._config.target, meta.versions)
                    continue
             }
@@ -72,6 +72,14 @@ export class Linter extends Visitor {
         severity := this._config.SeverityFor(meta.id)   ; config wins over meta.severity
         this._diagnostics.Push(Diagnostic(meta, node, message, severity))
     }
+
+    /**
+     * Called by lints (usually in __New) to read their configured options.
+     *
+     * @param {Object} meta the calling lint's static meta
+     * @returns {Object} option name -> value
+     */
+    Options(meta) => this._config.OptionsFor(meta.id)
 
     OnEnter(nodeType, callback, addRemove := 1) {
         this._AssertUnsealed()

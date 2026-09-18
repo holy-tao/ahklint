@@ -3,6 +3,7 @@
 #Include "../build/errshim.ahk"
 
 #Import "./YUnit/JUnit.ahk" { YUnitJUnit as JUnit }
+#Import "cJson\JSON.ahk" { JSON }
 
 #Import "../AutoHotkeyLang.ahk" { AutoHotkeyLang }
 #Import "../Linter.ahk" { Linter, DEFAULT_TARGET }
@@ -36,22 +37,28 @@ ExitApp(failed ? 1 : 0)
 
 /**
  * Scan one lint doc for fenced AutoHotkey examples and turn each into a test
- * case. Every block is linted in isolation; the diagnostics it produces must
- * match the `;~ <lint-id>` markers in the block exactly - no more, no less.
+ * case. Every block is linted in isolation with only the doc's own lint enabled,
+ * so examples can be snippets that other lints would complain about. The
+ * diagnostics it produces must match the `;~ <lint-id>` markers in the block
+ * exactly - no more, no less.
+ *
+ * A fence may carry the lint's options as a JSON object after `test`, e.g.
+ * ```` ``` autohotkey test {"style": "single"} ````. Blocks without one run with
+ * the lint's defaults.
  *
  * @param filepath absolute path to the .md file
  * @param writer the JUnit writer to record results into
  * @param lang the tree-sitter language to lint with
  */
 TestFile(filepath, writer, lang) {
-	static FENCE_START_PAT := "i)^``````\s*autohotkey\s+test"
+	static FENCE_START_PAT := "i)^``````\s*autohotkey\s+test\b(?<opts>.*)$"
 	static LINT_ID_PAT     := ";~\s+(?<lint>\S+)(?:\s+(?<count>\d+))?"
 
 	relPath := writer.StripPathToRelative(filepath)
 	stdout.WriteLine("Scanning " relPath " ...")
 
-	; Derive the lint id for this .md from ALL_LINTS so we can filter out noise
-	; from other lints firing on examples that aren't about them.
+	; Derive the lint id for this .md from ALL_LINTS: it's the only lint enabled
+	; while running this file's examples.
 	SplitPath(filepath, , , , &stem)
 	lintId := ""
 	for cls in ALL_LINTS {
@@ -59,6 +66,12 @@ TestFile(filepath, writer, lang) {
 			lintId := cls.meta.id
 			break
 		}
+	}
+	if lintId == "" {
+		Fail(writer, relPath, "lint lookup", filepath, 1,
+			"no lint class named " stem " in ALL_LINTS (rerun build/barrel.ahk?)")
+		stdout.WriteLine("  ❌ FAIL no lint class named " stem)
+		return
 	}
 
 	testFile := FileOpen(filepath, "r")
@@ -69,19 +82,21 @@ TestFile(filepath, writer, lang) {
 	blockStartLine := 0   ; line of the opening fence, for annotations
 	fileLineNum    := 0
 	expectedLints  := []  ; [{ lint: String, line: Int }]
+	optsText       := ""  ; the JSON options on the current block's fence, if any
 
 	loop {
 		line := testFile.ReadLine()
 		fileLineNum++
 
-		if !inCodeBlock && RegExMatch(line, FENCE_START_PAT) {
+		if !inCodeBlock && RegExMatch(line, FENCE_START_PAT, &fence) {
 			inCodeBlock    := true
 			blockStartLine := fileLineNum
+			optsText       := Trim(fence["opts"], " `t`r`n")
 		}
 		else if inCodeBlock {
 			if InStr(line, "``````") == 1 {
 				inCodeBlock := false
-				RunBlock(writer, lang, relPath, filepath, blockStartLine, acc, expectedLints, lintId)
+				RunBlock(writer, lang, relPath, filepath, blockStartLine, acc, expectedLints, lintId, optsText)
 
 				acc           := ""
 				expectedLints := []
@@ -107,26 +122,18 @@ TestFile(filepath, writer, lang) {
  * Lint a single block and record one test case. A failure lists every mismatch
  * between the diagnostics that fired and the markers in the block.
  */
-RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints, lintId := "") {
+RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints, lintId, optsText) {
 	testName := "block@line" startLine
 	t0 := A_TickCount
 
 	try {
-		diagnostics := RunLints(lang, code)
+		diagnostics := RunLints(lang, code, lintId, optsText)
 	} catch as e {
 		Fail(writer, relPath, testName, filepath, startLine,
 			"linter threw while checking block: " e.message, e.stack)
 		stdout.WriteLine(Format("  🚨 ERROR {1}: {2} ({3})", testName, e.message, e.extra))
 		stdout.WriteLine("    " StrReplace(e.Stack, "`n", "`n    "))
 		return
-	}
-
-	if lintId != "" {
-		filtered := []
-		for diag in diagnostics
-			if diag.code == lintId
-				filtered.Push(diag)
-		diagnostics := filtered
 	}
 
 	failures := CompareDiagnostics(diagnostics, expectedLints, startLine)
@@ -149,17 +156,24 @@ RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints, lintId
 }
 
 /**
- * Parse a snippet and run the lints over it. The source must be a real Buffer:
+ * Parse a snippet and run one lint over it. The source must be a real Buffer:
  * tree-sitter reads bytes through it and the Tree holds it alive, so a
  * buffer-like wrapper risks the backing memory being collected.
+ *
+ * The config goes through the real Config resolution, so a bad options object
+ * on a fence fails the block the same way it would fail a user's config file.
+ *
+ * @param {String} lintId the only lint to enable
+ * @param {String} optsText JSON options object for that lint, or "" for defaults
  */
-RunLints(lang, code) {
+RunLints(lang, code, lintId, optsText) {
 	size := StrPut(code, "UTF-8")	; bytes including the null terminator
 	buf  := Buffer(size)
 	StrPut(code, buf, "UTF-8")
 	buf.Size -= 1					; drop the terminator from the parsed range
 
-	cfg := Config.Default(ALL_LINTS, "")
+	lintCfg := optsText != "" ? ["warn", JSON.Parse(optsText)] : "warn"
+	cfg := Config(Map("extends", "none", "lints", Map(lintId, lintCfg)), ALL_LINTS, "")
 	DefineProp(cfg, "UNIT_TEST_RUN", { value: true })
 
 	return Linter(lang, buf, cfg).Run()

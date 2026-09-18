@@ -23,6 +23,7 @@
 
 #Include "./errshim.ahk"
 #Import "../lints/all.ahk" { ALL_LINTS }
+#Import "cJson\JSON.ahk" { JSON }
 
 stdout := FileOpen("*", "w", "UTF-8")
 
@@ -60,6 +61,9 @@ for cls in ALL_LINTS {
     ; i.e. a `;~ <id>` marker (the same markers the test harness asserts on).
     if !RegExMatch(prose, ";~\s+" meta.id "(?!\S)")
         throw Error(Format('{1} has no `;~ {2}` example', className ".md", meta.id))
+
+    ; Gate: every non-default option value must be exercised by some example.
+    CheckOptionCoverage(meta, prose, className ".md")
 
     outDir := contentDir "\" meta.category
     DirCreate(outDir)
@@ -170,9 +174,110 @@ WriteRootIndex(contentDir, byCategory) {
 }
 
 /**
+ * Matches the opening fence of a test block; group 1 is the (optional) JSON
+ * options object after `test`. Mirrors FENCE_START_PAT in tests/RunTests.ahk.
+ */
+TestFencePattern() => "im)^``````[ \t]*autohotkey[ \t]+test\b([^\r\n]*)"
+
+/**
+ * Throw if some non-default value of an option in meta.options is never used by
+ * a test block, so every mode a lint supports has at least one example. Enum
+ * options need each of their `values`; booleans need the non-default one.
+ */
+CheckOptionCoverage(meta, prose, docName) {
+    if !HasProp(meta, "options")
+        return
+
+    seen := Map()   ; lowercased "name=value" pairs used by some fence
+    pos := 1
+    while RegExMatch(prose, TestFencePattern(), &m, pos) {
+        pos := m.Pos + m.Len
+        optsText := Trim(m[1])
+        if optsText == ""
+            continue
+        opts := JSON.Parse(optsText)
+        if !(opts is Map)
+            throw Error(Format('{1}: test fence options must be a JSON object: {2}', docName, optsText))
+        for name, val in opts
+            seen[StrLower(name "=" val)] := true
+    }
+
+    for name, spec in meta.options.OwnProps() {
+        required := HasProp(spec, "values") ? spec.values
+                  : spec.type == "boolean"  ? [!spec.default]
+                  : []
+        for val in required {
+            if val = spec.default
+                continue
+            if !seen.Has(StrLower(name "=" val))
+                throw Error(Format('{1} has no example with option {2} = {3}',
+                    docName, name, FormatOptionValue(spec, val)))
+        }
+    }
+}
+
+/** An option value as it would be written in JSON config. */
+FormatOptionValue(spec, val) {
+    switch spec.type {
+        case "boolean": return val ? "true" : "false"
+        case "string":  return '"' val '"'
+        default:        return String(val)
+    }
+}
+
+/**
+ * Turn test fences into plain `autohotkey` fences for publishing. A block with
+ * options gets a leading comment showing the config it runs under, so readers
+ * can tell why otherwise-similar examples are judged differently.
+ */
+RewriteTestFences(meta, prose) {
+    eol := InStr(prose, "`r`n") ? "`r`n" : "`n"
+    out := "", pos := 1
+    while RegExMatch(prose, TestFencePattern(), &m, pos) {
+        out .= SubStr(prose, pos, m.Pos - pos) "``````autohotkey"
+        optsText := Trim(m[1])
+        if optsText != ""
+            out .= Format('{1}; config: "{2}": ["{3}", {4}]', eol, meta.id, meta.severity, optsText)
+        pos := m.Pos + m.Len
+    }
+    return out SubStr(prose, pos)
+}
+
+/**
+ * Render the "Options" section for a lint that declares meta.options: a table of
+ * each option, then an example config entry spelling out the defaults.
+ */
+BuildOptionsSection(meta) {
+    if !HasProp(meta, "options")
+        return ""
+
+    table := "| Option | Type | Default | Description |`n"
+           . "|--------|------|---------|-------------|`n"
+    defaults := ""
+    for name, spec in meta.options.OwnProps() {
+        type := spec.type
+        if HasProp(spec, "values") {
+            type := ""
+            for val in spec.values
+                type .= (type == "" ? "" : ", ") "``" FormatOptionValue(spec, val) "``"
+        }
+        table .= Format("| ``{1}`` | {2} | ``{3}`` | {4} |`n", name, type,
+            FormatOptionValue(spec, spec.default), HasProp(spec, "description") ? spec.description : "")
+        defaults .= (defaults == "" ? "" : ", ") Format('"{1}": {2}', name, FormatOptionValue(spec, spec.default))
+    }
+
+    return "`n## Options`n`n" table
+         . "`nSet options with the tuple form in your config. The defaults are:`n`n"
+         . "``````json`n"
+         . Format('"{1}": ["{2}", {{3}}]', meta.id, meta.severity, " " defaults " ") "`n"
+         . "``````" "`n"
+}
+
+/**
  * Assemble one Hugo content page: front-matter, an H1, a one-row info table
- * from `meta`, the prose (with test markers stripped), then a "See also" list
- * from meta.references.
+ * from `meta`, the prose (with test markers stripped and test fences made
+ * plain), an "Options" section from meta.options, then a "See also" list from
+ * meta.references.
  */
 BuildPage(meta, prose) {
     fm := "---`n"
@@ -188,7 +293,8 @@ BuildPage(meta, prose) {
           . Format("| ``{1}`` | {2} | {3} | {4} | ``{5}`` | {6} |`n`n",
                 meta.id, meta.category, meta.severity, meta.fixable,
                 meta.versions, meta.recommended ? "yes" : "no")
-          . RTrim(StripTestMarkers(prose), "`r`n") "`n"
+          . RTrim(StripTestMarkers(RewriteTestFences(meta, prose)), "`r`n") "`n"
+          . BuildOptionsSection(meta)
 
     if meta.references.Length {
         body .= "`n## See also`n`n"

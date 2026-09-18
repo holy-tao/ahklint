@@ -22,7 +22,21 @@ class _FakeNewOnly {
         severity: "error", fixable: "none", recommended: true, references: [] }
 }
 
-_FakeRegistry() => [_FakeRecommended, _FakeOptional, _FakeNewOnly]
+class _FakeWithOptions {
+    static meta => { id: "fake-options", title: "", category: "x", versions: ">=2.0",
+        severity: "warn", fixable: "none", recommended: true, references: [],
+        options: {
+            mode:  { type: "string",  default: "a", values: ["a", "b"] },
+            flag:  { type: "boolean", default: true },
+            limit: { type: "number",  default: 80 }
+        } }
+}
+
+_FakeRegistry() => [_FakeRecommended, _FakeOptional, _FakeNewOnly, _FakeWithOptions]
+
+; Config with the given options map on fake-options
+_OptionsConfig(opts) =>
+    Config(Map("lints", Map("fake-options", ["warn", opts])), _FakeRegistry(), "2.0")
 
 /**
  * Run every unit case, recording each into the shared JUnit writer.
@@ -101,6 +115,47 @@ _UnitCases() {
         _Throws(() => Config(Map("extends", "everything"), _FakeRegistry(), "2.0"))
     cases["config: invalid severity throws"] := () =>
         _Throws(() => Config(Map("lints", Map("fake-rec", "loud")), _FakeRegistry(), "2.0"))
+    cases["config: severity is case-insensitive"] := () {
+        c := Config(Map("lints", Map("fake-rec", "Error")), _FakeRegistry(), "2.0")
+        _Assert(c.SeverityFor("fake-rec") == "error", "severity normalized to lowercase")
+    }
+
+    cases["config: options default from meta"] := () {
+        o := Config.Default(_FakeRegistry(), "2.0").OptionsFor("fake-options")
+        _Assert(o.mode == "a" && o.flag == true && o.limit == 80, "all defaults present")
+    }
+    cases["config: options without declaration are empty"] := () {
+        o := Config.Default(_FakeRegistry(), "2.0").OptionsFor("fake-rec")
+        _Assert(ObjOwnPropCount(o) == 0, "no options")
+    }
+    cases["config: options merge over defaults"] := () {
+        o := _OptionsConfig(Map("mode", "b", "flag", 0)).OptionsFor("fake-options")
+        _Assert(o.mode == "b",   "mode overridden")
+        _Assert(o.flag == 0,     "flag overridden")
+        _Assert(o.limit == 80,   "limit kept its default")
+    }
+    cases["config: enum option normalizes case"] := () {
+        o := _OptionsConfig(Map("mode", "B")).OptionsFor("fake-options")
+        _Assert(o.mode == "b", "enum value normalized to declared spelling")
+    }
+    cases["config: OptionsFor returns a copy"] := () {
+        c := Config.Default(_FakeRegistry(), "2.0")
+        c.OptionsFor("fake-options").mode := "b"
+        _Assert(c.OptionsFor("fake-options").mode == "a", "mutation didn't leak")
+    }
+
+    cases["config: unknown option throws"] := () =>
+        _Throws(() => _OptionsConfig(Map("nope", 1)))
+    cases["config: option outside enum throws"] := () =>
+        _Throws(() => _OptionsConfig(Map("mode", "c")))
+    cases["config: option of wrong type throws"] := () =>
+        _Throws(() => _OptionsConfig(Map("limit", "eighty")))
+    cases["config: non-boolean for boolean option throws"] := () =>
+        _Throws(() => _OptionsConfig(Map("flag", 2)))
+    cases["config: non-object options throws"] := () =>
+        _Throws(() => _OptionsConfig("mode=b"))
+    cases["config: oversized tuple throws"] := () =>
+        _Throws(() => Config(Map("lints", Map("fake-options", ["warn", Map(), 1])), _FakeRegistry(), "2.0"))
 
     return cases
 }

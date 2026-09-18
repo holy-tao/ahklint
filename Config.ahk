@@ -14,7 +14,7 @@
  *         "extends": "recommended",        // "recommended" | "all" | "none"
  *         "lints": {
  *             "no-goto":    "error",        // "off" | "warn" | "error"
- *             "one-requires": ["warn", {}]  // tuple: severity + (future) options
+ *             "quote-style": ["warn", { "style": "single" }]  // tuple: severity + options
  *         }
  *     }
  *
@@ -22,6 +22,19 @@
  * every lint with meta.recommended at its meta.severity), then apply the `lints`
  * overrides on top. Every referenced lint id and the `extends` value are
  * validated against the registry, so typos fail fast (DESIGN.md §7).
+ *
+ * Options: a lint that takes options declares them in `meta.options`, keyed by
+ * option name:
+ *
+ *     options: {
+ *         style: { type: "string", default: "double", values: ["double", "single"],
+ *                  description: "..." }
+ *     }
+ *
+ * `type` is "string" | "number" | "boolean"; `values` optionally restricts the
+ * option to an enum. Every lint gets its defaults, and user-supplied options are
+ * validated against the declaration and merged on top, so `OptionsFor` always
+ * returns a complete object.
  */
 export class Config {
     /**
@@ -32,7 +45,7 @@ export class Config {
     __New(parsed, registry, target) {
         this.target    := target
         this._severity := Map()   ; lint id -> "off" | "warn" | "error"
-        this._options  := Map()   ; lint id -> options object (reserved for meta.schema)
+        this._options  := Map()   ; lint id -> resolved options object (defaults + overrides)
         this._Resolve(parsed, registry)
     }
 
@@ -78,15 +91,23 @@ export class Config {
     /** Is this lint enabled (effective severity is not "off")? */
     IsEnabled(id) => this.SeverityFor(id) != "off"
 
+    /**
+     * Resolved options for a lint id: every option declared in its meta.options,
+     * at its configured value or its default. A copy, since one Config is shared
+     * by every file in a run. Lints without options get an empty object.
+     */
+    OptionsFor(id) => this._options.Has(id) ? this._options[id].Clone() : {}
+
     _Resolve(parsed, registry) {
         metaById := Map()
         for cls in registry {
             m := cls.meta
             metaById[m.id] := m
+            this._options[m.id] := Config._DefaultOptions(m)
         }
 
         extends := parsed.Has("extends") ? parsed["extends"] : "recommended"
-        switch extends {
+        switch StrLower(extends) {
             case "recommended":
                 for id, m in metaById
                     if m.recommended
@@ -111,28 +132,91 @@ export class Config {
         for id, val in lints {
             if !metaById.Has(id)
                 throw ValueError('Unknown lint id in config: "' id '"', -1)
-            this._severity[id] := this._SeverityFromValue(val, id)
+            this._severity[id] := this._SeverityFromValue(val, metaById[id])
         }
     }
 
     /** A config value is either a severity string or a `[severity, options]` tuple. */
-    _SeverityFromValue(val, id) {
+    _SeverityFromValue(val, meta) {
+        id := meta.id
         if (val is Array) {
             if !val.Length
                 throw ValueError('Empty config tuple for lint "' id '"', -1)
-            if (val.Length >= 2)
-                this._options[id] := val[2]   ; TODO parse options
+            if (val.Length > 2)
+                throw ValueError('Config tuple for lint "' id '" must be [severity, options]', -1)
+            if (val.Length == 2)
+                this._ApplyOptions(val[2], meta)
             return this._NormSeverity(val[1], id)
         }
         return this._NormSeverity(val, id)
     }
 
+    /** Build a lint's default options object from its meta.options declaration. */
+    static _DefaultOptions(meta) {
+        opts := {}
+        if !HasProp(meta, "options")
+            return opts
+        for name, spec in meta.options.OwnProps() {
+            if !HasProp(spec, "default") || !HasProp(spec, "type")
+                throw ValueError(Format('Option "{1}" of lint "{2}" must declare a type and default',
+                    name, meta.id), -1)
+            ;@ahkbuild-safe
+            opts.%name% := spec.default
+        }
+        return opts
+    }
+
+    /** Validate user-supplied options against meta.options and merge them over the defaults. */
+    _ApplyOptions(userOpts, meta) {
+        id := meta.id
+        if !(userOpts is Map)
+            throw ValueError('Options for lint "' id '" must be a JSON object', -1)
+
+        declared := HasProp(meta, "options") ? meta.options : {}
+        resolved := this._options[id]
+        for name, val in userOpts {
+            if !HasProp(declared, name)
+                throw ValueError(Format('Unknown option "{1}" for lint "{2}"', name, id), -1)
+            ;@ahkbuild-safe
+            resolved.%name% := Config._NormOption(val, declared.%name%, name, id)
+        }
+    }
+
+    /**
+     * Check one option value against its declaration. Enum values match
+     * case-insensitively (like severities) and normalize to the declared spelling.
+     */
+    static _NormOption(val, spec, name, id) {
+        switch spec.type {
+            case "string":  ok := val is String
+            case "number":  ok := val is Number
+            case "boolean": ok := val is Integer && (val == 0 || val == 1)   ; cJson decodes bools as 1/0
+            default:
+                throw ValueError(Format('Option "{1}" of lint "{2}" has unknown type "{3}"',
+                    name, id, spec.type), -1)
+        }
+        if !ok
+            throw ValueError(Format('Option "{1}" for lint "{2}" must be a {3}', name, id, spec.type), -1)
+
+        if !HasProp(spec, "values")
+            return val
+
+        expected := ""
+        for allowed in spec.values {
+            if (allowed = val)
+                return allowed
+            expected .= (expected == "" ? "" : ", ") '"' allowed '"'
+        }
+        throw ValueError(Format('Invalid value "{1}" for option "{2}" of lint "{3}" (expected {4})',
+            val, name, id, expected), -1)
+    }
+
     _NormSeverity(sev, id) {
         if !(sev is String)
             throw ValueError('Severity for lint "' id '" must be a string', -1)
-        switch sev {
+        switch StrLower(sev) {
             case "off", "warn", "error":
-                return sev
+                return StrLower(sev)
             default:
                 throw ValueError('Invalid severity "' sev '" for lint "' id '" '
                     . '(expected "off", "warn", or "error")', -1)

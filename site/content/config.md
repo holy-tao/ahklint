@@ -70,3 +70,14 @@ strings to indicate severity:
 Or an array with exactly two items, where the first item is one of the above strings and the second is an object
 containing lint-specific configuration options. Every lint also has a default severity and config, see the indivudal
 lint pages for details.
+
+```json
+{
+    "lints": {
+        "quote-style": ["warn", { "style": "single" }]
+    }
+}
+```
+
+Options you leave out keep their defaults. Unknown options, values of the wrong type, and values outside an option's
+allowed set are errors.
