@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
 #Import "./Docs.ahk" { DocsUrl }
+#Import Colors { Red, Yellow, Cyan, Magenta }
 
 /**
  * A single lint finding. Field names mirror an LSP Diagnostic closely enough
@@ -31,14 +32,26 @@ export class Diagnostic {
      * Human-readable output for the console
      */
     Format(file) {
-        str := Format("{1} @ ({2}, {3}) [{4}] {5}:`n", file, this.start.row, this.start.column, this.code, this.severity)
+        color := this.severity = "warn" ? Yellow : Red
+
+        str := Format("{1}:{2}:{3} [{4}] {5}:`n", file, 
+            this.start.row + 1, this.start.column + 1, Magenta(this.code), color(this.severity))
         str .= "Line |`n"
-        str .= Format("{1:4} | {2}`n", this.start.row + 1, this._ReadLine(file, this.start.row + 1))
+
+        line := this._ReadLine(file, this.start.row + 1)
+        lineStart := SubStr(line, 1, this.start.column)
+        errPart := SubStr(line, this.start.column + 1, this.end.column - this.start.column)
+        lineEnd := SubStr(line, this.end.column + 1)
+
+        coloredLine := lineStart color(errPart) lineEnd
+
+        str .= Format("{1:4} | {2}`n", this.start.row + 1, coloredLine)
         str .= Format("     | {1}{2}`n",
             this._StrRepeat(" ", this.start.column), 
-            this._StrRepeat("^", this.end.column - this.start.column))
+            color(this._StrRepeat("~", this.end.column - this.start.column)))
+
         str .= Format("     | {1}`n", this.message)
-        str .= Format("     | See: {1}`n", this.docs)
+        str .= Format("     | See: {1}`n", Cyan(this.docs))
         return str
     }
 

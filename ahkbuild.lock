@@ -8,6 +8,12 @@
       "checksum": "sha256:ed5748bc24be15e72871ed07a6c6e25d401ab4e583682ebb54eaf6649072410f"
     },
     {
+      "name": "ahk-utils",
+      "source": "git+git@github.com:holy-tao/ahk-utils.git",
+      "resolved": "638defa3393dccd1ae7a42a01e1f1e343bba5a4c",
+      "checksum": "sha256:43eae8cdf57dc7f4bc5f4a4171f6eeed4a47955a078e1cecb7ca09a0d9061e6d"
+    },
+    {
       "name": "ahkcollections",
       "source": "git+git@github.com:holy-tao/ahkcollections.git",
       "resolved": "452c15d50a734370c3d94002f34ca2ff43ce41a5",

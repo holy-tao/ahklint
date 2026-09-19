@@ -8,11 +8,13 @@
 #Import "./src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
 #Import "./src/Config.ahk" { Config }
 #Import "./src/lints/all.ahk" { ALL_LINTS }
+#Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red, Yellow }
+
+#Import "utils/Console" { Console }
 
 ;@Ahk2Exe-ConsoleApp
 
-stdout := FileOpen("*", "w")
-stderr := FileOpen("**", "w")
+Console.Attach()
 
 main()
 
@@ -22,25 +24,25 @@ main()
  */
 main() {
 
-    args := ParseArgs(A_Args, stderr)   ; { file, configPath, target }
+    args := ParseArgs(A_Args, Console.Err)   ; { file, configPath, target }
 
     filepath := args.file
     if (filepath == "") 
         filepath := A_WorkingDir
 
     if !FileExist(filepath) {
-        stderr.WriteLine("ahklint: no such file: " filepath)
+        Console.Err.WriteLine("ahklint: no such file: " filepath)
         ExitApp(2)
     }
 
-    cfg := LoadConfig(args, filepath, stderr)
+    cfg := LoadConfig(args, filepath, Console.Err)
 
     diagnostics := 0
 
     if InStr(FileGetAttrib(filepath), "D") {
         ; Directory - lint all files in it and subdirectories
         loop files GetFullPathName(filepath) "\*.ahk", "r" {
-            stdout.WriteLine(Format("Linting {1}...", A_LoopFilePath))
+            Console.Out.WriteLine(Format("Linting {1}...", A_LoopFilePath))
             diagnostics += LintFile(A_LoopFileFullPath, cfg)
         }
     }
@@ -62,9 +64,9 @@ LintFile(filepath, cfg) {
     diagnostics := Linter(AutoHotkeyLang(), source, cfg).Run()
 
     for diag in diagnostics
-        stdout.WriteLine(diag.Format(filepath))
+        Console.Out.WriteLine(diag.Format(filepath))
 
-    stdout.WriteLine(Format("{1} problem(s)", diagnostics.Length))
+    Console.Out.WriteLine(Format("{1} problem(s)", diagnostics.Length))
     return diagnostics.Length
 }
 
@@ -131,7 +133,7 @@ LoadConfig(args, filepath, stderr) {
                 target := parsed["target"]
             } else {
                 target := DEFAULT_TARGET
-                stderr.WriteLine("ahklint: no target version set; assuming " DEFAULT_TARGET
+                stderr.WriteLine(Yellow("ahklint: ") "no target version set; assuming " DEFAULT_TARGET
                     . ". Set --target or a `"target`" in config to silence this.")
             }
         }
@@ -144,7 +146,7 @@ LoadConfig(args, filepath, stderr) {
 }
 
 Die(stderr, message) {
-    stderr.WriteLine("ahklint: " message)
+    stderr.WriteLine(Red("ahklint: ") message)
     stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] <file.ahk>")
     ExitApp(2)
 }

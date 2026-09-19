@@ -57,6 +57,10 @@
     "ahkcollections": {
       "git": "git@github.com:holy-tao/ahkcollections.git",
       "alias": "collections"
+    },
+    "ahk-utils": {
+      "git": "git@github.com:holy-tao/ahk-utils.git",
+      "alias": "utils"
     }
   }
 }
