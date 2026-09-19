@@ -1,0 +1,51 @@
+name: Build Exe
+
+# Compile the .exe file and upload it as an artifact alongside
+# the tree-sitter binaries.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Publish
+    runs-on: windows-latest
+    env:
+      AhkImportPath: .\.ahkbuild\modules\
+
+    steps:
+      - name: Configure Rust Logging
+        shell: bash
+        run: |
+          if [ "${{ runner.debug }}" = "1" ]; then
+            echo "RUST_LOG=debug" >> $GITHUB_ENV
+          else
+            echo "RUST_LOG=info" >> $GITHUB_ENV
+          fi
+
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Download tree-sitter DLLs
+        uses: actions/download-artifact@v8
+        with:
+          name: tree-sitter-dlls
+          path: bin
+
+      - name: Setup ahkbuild
+        uses: ./.github/actions/setup-ahkbuild
+
+      - run: ahkbuild bundle exe
+
+      - name: Upload exe
+        uses: actions/upload-artifact@v7
+        with:
+          name: ahklint
+          path: |
+            ahklint.exe
+            bin/*.dll
+            LICENSE
+          if-no-files-found: error
