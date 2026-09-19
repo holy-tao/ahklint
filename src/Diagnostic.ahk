@@ -39,16 +39,23 @@ export class Diagnostic {
         str .= "Line |`n"
 
         line := this._ReadLine(file, this.start.row + 1)
+
+        ; Only the first line of a multi-line span is shown: underline from the
+        ; start column to the end of that line and note where the span ends.
+        multiline := this.end.row > this.start.row
+        endCol := Max(multiline ? StrLen(line) : this.end.column, this.start.column)
+
         lineStart := SubStr(line, 1, this.start.column)
-        errPart := SubStr(line, this.start.column + 1, this.end.column - this.start.column)
-        lineEnd := SubStr(line, this.end.column + 1)
+        errPart := SubStr(line, this.start.column + 1, endCol - this.start.column)
+        lineEnd := SubStr(line, endCol + 1)
 
         coloredLine := lineStart color(errPart) lineEnd
 
         str .= Format("{1:4} | {2}`n", this.start.row + 1, coloredLine)
-        str .= Format("     | {1}{2}`n",
-            this._StrRepeat(" ", this.start.column), 
-            color(this._StrRepeat("~", this.end.column - this.start.column)))
+        str .= Format("     | {1}{2}{3}`n",
+            this._StrRepeat(" ", this.start.column),
+            color(this._StrRepeat("~", endCol - this.start.column)),
+            multiline ? Format(" (continues to line {1})", this.end.row + 1) : "")
 
         str .= Format("     | {1}`n", this.message)
         str .= Format("     | See: {1}`n", Cyan(this.docs))
