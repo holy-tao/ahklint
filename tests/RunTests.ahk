@@ -35,6 +35,8 @@ failed := junitWriter.tests.fail
 junitWriter := ""
 ExitApp(failed ? 1 : 0)
 
+StripTestMarkers(prose) => RegExReplace(prose, "m)[ \t]*;~[ \t].*$", "")
+
 /**
  * Scan one lint doc for fenced AutoHotkey examples and turn each into a test
  * case. Every block is linted in isolation with only the doc's own lint enabled,
@@ -104,7 +106,7 @@ TestFile(filepath, writer, lang) {
 			}
 			else {
 				blockline++
-				acc .= line "`r`n"
+				acc .= StripTestMarkers(line) "`r`n"
 				if RegExMatch(line, LINT_ID_PAT, &match) {
 					count := match["count"] != "" ? Integer(match["count"]) : 1
 					loop count
