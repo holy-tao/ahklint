@@ -3,6 +3,9 @@
 #Import treesitter { Parser }
 #Import "treesitter/util" { Visitor }
 
+#Import "extensions/MapExtensions"
+#Import "extensions/ArrayExtensions"
+
 #Import "./Diagnostic.ahk" { Diagnostic }
 #Import "./Config.ahk" { Config }
 #Import "./lints/all.ahk" { ALL_LINTS }
@@ -22,12 +25,22 @@ export class Linter extends Visitor {
     _sealed := false
 
     /**
+     * Ignore directives in this linter's source, mapped from line number
+     * to an array of the ignored lints' ids
+     * TODO: introduce a meta-lint for unused ignore directives
+     * 
+     * @type {Map<Integer, Array<String>>}
+     */
+    ignores := Map()
+
+    /**
      * @param {Language} lang the tree-sitter language to parse with
      * @param {Buffer} source the file contents (read as "RAW")
      * @param {Config} configMap resolved config; defaults to the recommended preset
      *        at DEFAULT_TARGET when omitted (used by tests and ad-hoc callers)
      */
     __New(lang, source, cfg?) {
+        this._language := lang
         this._parser := Parser(lang)
         this._source := source
         this._config := cfg ?? Config.Default(ALL_LINTS, DEFAULT_TARGET)
@@ -35,6 +48,7 @@ export class Linter extends Visitor {
         this._tree := this._parser.Parse(source)   ; keep alive: nodes read from it
         this._diagnostics := []
         this._lints := []
+        this.ignores := this.FindIgnoreDirectives()
 
         super.__New(this._tree.Root)                 ; Visitor walks from the root
 
@@ -54,10 +68,47 @@ export class Linter extends Visitor {
         this._sealed := true
     }
 
+    /**
+     * Find and parse all ignore directives in this linter's source.
+     * @returns {Map<Integer, Array<String>>} Map of line numbers to ignored lint ids
+     */
+    FindIgnoreDirectives() {
+        cursor := this._tree.Query("(directive_comment) @directive")
+        ignores := Map()
+
+        while match := cursor.NextMatch() {
+            node := match.captures[1].node
+            name := node.GetChildByFieldName("directive").text
+            if InStr(name, "ahklint") != 1
+                continue ; not our directive
+            
+            ignoredIds := StrSplit(node.GetChildByFieldName("arguments").text, " ", " `r`n`t")
+                .Filter(str => str)
+
+            switch name, "off" {
+                case "ahklint-ignore": ignores[node.startPoint.row] := ignoredIds
+                case "ahklint-ignore-next-line": ignores[node.startPoint.row + 1] := ignoredIds
+            }
+        }
+
+        return ignores
+    }
+
     /** Walk the tree and return the collected diagnostics. */
     Run() {
         this.Visit()
         return this._diagnostics
+    }
+
+    /**
+     * Whether this lint is ignored
+     * @param {Object} meta the reporting lint's static meta 
+     * @param {Node} node tree-sitter node that was linted 
+     * @returns {Integer} 1 if the lint is ignored, 0 if not
+     */
+    IsIgnored(meta, node) {
+        return this.ignores.Get(node.startPoint.row, [])
+            .Any(id => id = meta.id)
     }
 
     /**
@@ -69,6 +120,9 @@ export class Linter extends Visitor {
      * @param {String} message the message to show
      */
     Report(meta, node, message) {
+        if this.IsIgnored(meta, node)
+            return
+
         severity := this._config.SeverityFor(meta.id)   ; config wins over meta.severity
         this._diagnostics.Push(Diagnostic(meta, node, message, severity))
     }

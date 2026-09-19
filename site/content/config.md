@@ -81,3 +81,23 @@ lint pages for details.
 
 Options you leave out keep their defaults. Unknown options, values of the wrong type, and values outside an option's
 allowed set are errors.
+
+## Ignoring Lints in Code
+
+You can ignore lints in individual source files using the following directive comments:
+
+- `;@ahklint-ignore`: ignores the listed lints on the current line
+- `;@ahklint-ignore-next-line`: ignores the listed lints on the next line (for use when the above directive would
+  make the line unnecessarily long).
+
+Each directive takes a space-delimited list of lint ids to ignore. For example, the following two code blocks are
+equivalent.
+
+```autohotkey
+PascalCase := Array('one', 'two', 'three') ;@ahklint-ignore prefer-array-bracket-form quote-style
+```
+
+```autohotkey
+;@ahklint-ignore-next-line prefer-array-bracket-form quote-style
+PascalCase := Array('one', 'two', 'three')
+```
