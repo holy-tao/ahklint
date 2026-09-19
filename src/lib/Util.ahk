@@ -16,7 +16,7 @@
  */
 FlattenNode(node) {
     current := node
-    while current.NamedChildCount > 1 {
+    while current.NamedChildCount == 1 {
         current := current.GetNamedChild(0)
     }
     return current
