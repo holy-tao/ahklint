@@ -23,8 +23,8 @@ main()
  * Parses one file, prints diagnostics, exits non-zero if any were found.
  */
 main() {
-
     args := ParseArgs(A_Args, Console.Err)   ; { file, configPath, target }
+    SetANSIColorsEnabled(!args.noColor)
 
     filepath := args.file
     if (filepath == "") 
@@ -83,7 +83,7 @@ GetFullPathName(path) {
  * `--options` and missing flag values are hard errors (usage + exit 2).
  */
 ParseArgs(argv, stderr) {
-    out := { file: "", configPath: "", target: "" }
+    out := { file: "", configPath: "", target: "", noColor : !!EnvGet("NO_COLOR") }
     i := 1
     while (i <= argv.Length) {
         arg := argv[i]
@@ -96,6 +96,8 @@ ParseArgs(argv, stderr) {
                 if (i == argv.Length)
                     Die(stderr, "--target requires a version")
                 out.target := argv[++i]
+            case "--no-color":
+                out.noColor := true
             default:
                 if (SubStr(arg, 1, 2) == "--")
                     Die(stderr, "unknown option: " arg)

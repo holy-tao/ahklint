@@ -2,9 +2,20 @@
 
 #Import "utils/Console" { Console }
 
+_enabled := true
+
 _Colored(code, text) {
-    ; TODO - respect NO_COLOR
+    if !_enabled
+        return text
     return Console.Escape "[" String(code) "m" text Console.Escape "[0m"
+}
+
+/**
+ * Enable or disable ANSI colors.
+ * @param {Any} enabled whether to enable colors 
+ */
+export SetEnabled(enabled) {
+    global _enabled := !!enabled
 }
 
 export global Red := _Colored.Bind(31)
