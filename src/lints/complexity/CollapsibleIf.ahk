@@ -39,7 +39,7 @@ class CollapsibleIf {
             body := bodyChildren[1]
         }
 
-        if body.type != "if_statement"
+        if body.type != "if_statement" || !body.GetChildByFieldName("else_block").IsNull
             return
 
         ; TODO check to see if either side needs to be parenthesized?
@@ -47,7 +47,7 @@ class CollapsibleIf {
         nestedCondition := Trim(body.GetChildByFieldName("condition").text, " `r`n`t")
         newCondition := topCondition " && " nestedCondition
 
-        linter.Report(CollapsibleIf.meta, node.GetChild(0),
+        linter.Report(CollapsibleIf.meta, node,
             Format("If statements can be collapsed: ``if {1}``", newCondition))
     }
 }
