@@ -4,7 +4,7 @@ class UnnecessaryCallCall {
     static meta => {
         id:          "unnecessary-call-call",
         title:       "Unnecessary Call to Call",
-        category:    "misc",
+        category:    "complexity",
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",
