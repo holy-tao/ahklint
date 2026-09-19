@@ -63,3 +63,13 @@ GetArg(fnNode, argIndex) {
 FirstNamedChildOfType(parent, type) => 
     parent.GetNamedChildren()
     .FirstOrDefault(child => child.type == type, Node())
+
+/** Whether the given node is a comment of any kind */
+IsComment(node) {
+    switch node.type, "off" {
+        case "line_comment", "block_comment", "directive_comment":
+            return true
+        default:
+            return false
+    }
+}
