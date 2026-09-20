@@ -98,11 +98,31 @@ export class Config {
      */
     OptionsFor(id) => this._options.Has(id) ? this._options[id].Clone() : {}
 
+    /**
+     * The metas of every lint this config enables, in registry order.
+     *
+     * Output formats need to describe the rules that ran, not just the findings:
+     * a SARIF driver lists them under `tool.driver.rules`, and a language server
+     * announces them. Answering from the config means neither has to construct a
+     * Linter or walk a tree.
+     *
+     * @returns {Array<Object>}
+     */
+    EnabledMetas() {
+        enabled := []
+        for meta in this._metas
+            if this.IsEnabled(meta.id)
+                enabled.Push(meta)
+        return enabled
+    }
+
     _Resolve(parsed, registry) {
+        this._metas := []         ; registry order, for EnabledMetas
         metaById := Map()
         for cls in registry {
             m := cls.meta
             metaById[m.id] := m
+            this._metas.Push(m)
             this._options[m.id] := Config._DefaultOptions(m)
         }
 

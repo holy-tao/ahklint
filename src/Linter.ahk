@@ -5,6 +5,7 @@
 
 #Import "extensions/MapExtensions"
 #Import "extensions/ArrayExtensions"
+#Import "collections/Typed/TypedArray" { TypedArray }
 
 #Import "./Diagnostic.ahk" { Diagnostic }
 #Import "./Config.ahk" { Config }
@@ -46,8 +47,8 @@ export class Linter extends Visitor {
         this._config := cfg ?? Config.Default(ALL_LINTS, DEFAULT_TARGET)
         this.ahkVersion := this._config.target
         this._tree := this._parser.Parse(source)   ; keep alive: nodes read from it
-        this._diagnostics := []
-        this._lints := []
+        this._diagnostics := A_IsCompiled ? [] : TypedArray(Diagnostic)
+        this.lints := []
         this.ignores := this.FindIgnoreDirectives()
 
         super.__New(this._tree.Root)                 ; Visitor walks from the root
@@ -63,7 +64,7 @@ export class Linter extends Visitor {
             }
 
             if this._config.SeverityFor(meta.id) != "off"
-                this._lints.Push(cls(this))
+                this.lints.Push(cls(this))
         }
         this._sealed := true
     }
@@ -118,13 +119,15 @@ export class Linter extends Visitor {
      * @param {Object} meta the reporting lint's static meta
      * @param {Node} node the node to anchor the finding to
      * @param {String} message the message to show
+     * @param {Array<Fix>} fixes optional edits that resolve the finding, each
+     *        `{ startByte, endByte, newText }` - see Diagnostic
      */
-    Report(meta, node, message) {
+    Report(meta, node, message, fixes?) {
         if this.IsIgnored(meta, node)
             return
 
         severity := this._config.SeverityFor(meta.id)   ; config wins over meta.severity
-        this._diagnostics.Push(Diagnostic(meta, node, message, severity))
+        this._diagnostics.Push(Diagnostic(meta, node, message, severity, fixes?))
     }
 
     /**

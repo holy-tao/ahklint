@@ -7,6 +7,10 @@
 #Import "./src/Linter.ahk" { Linter, DEFAULT_TARGET }
 #Import "./src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
 #Import "./src/Config.ahk" { Config }
+#Import "./src/LintRun.ahk" { LintRun }
+#Import "./src/SourceText.ahk" { SourceText }
+#Import "./src/Version.ahk" { AHKLINT_VERSION }
+#Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
 #Import "./src/lints/all.ahk" { ALL_LINTS }
 #Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red, Yellow }
 
@@ -20,14 +24,24 @@ main()
 
 /**
  * CLI entry point: `ahklint [--config <path>] [--target <ver>] <file.ahk>`
- * Parses one file, prints diagnostics, exits non-zero if any were found.
+ *
+ * Collects every file's findings into one LintRun and hands them to the
+ * formatters. The run is built even for a single file, because a format like
+ * SARIF describes the whole invocation rather than one file at a time.
+ *
+ * Exit code: 2 if any file failed to lint, 1 if any finding fired, else 0.
  */
 main() {
-    args := ParseArgs(A_Args, Console.Err)   ; { file, configPath, target }
+    args := ParseArgs(A_Args, Console.Err)   ; { file, configPath, target, ... }
     SetANSIColorsEnabled(!args.noColor)
 
+    if args.showVersion {
+        Console.Out.WriteLine("ahklint " AHKLINT_VERSION)
+        ExitApp(0)
+    }
+
     filepath := args.file
-    if (filepath == "") 
+    if (filepath == "")
         filepath := A_WorkingDir
 
     if !FileExist(filepath) {
@@ -36,38 +50,57 @@ main() {
     }
 
     cfg := LoadConfig(args, filepath, Console.Err)
+    run := LintRun(cfg)
 
-    diagnostics := 0
+    isDir := !!InStr(FileGetAttrib(filepath), "D")
 
-    if InStr(FileGetAttrib(filepath), "D") {
+    ; The console streams as it goes; whole-run formats buffer on `run` instead.
+    formatters := [ConsoleFormatter(Console.Out, isDir)]
+
+    if isDir {
         ; Directory - lint all files in it and subdirectories
-        loop files GetFullPathName(filepath) "\*.ahk", "r" {
-            Console.Out.WriteLine(Format("Linting {1}...", A_LoopFilePath))
-            diagnostics += LintFile(A_LoopFileFullPath, cfg)
-        }
+        loop files GetFullPathName(filepath) "\*.ahk", "r"
+            LintFile(A_LoopFileFullPath, cfg, run, formatters)
     }
     else {
-        diagnostics := LintFile(GetFullPathName(filepath), cfg)
+        LintFile(GetFullPathName(filepath), cfg, run, formatters)
     }
 
-    ExitApp(diagnostics > 0 ? 1 : 0)
+    for formatter in formatters
+        formatter.OnFinish(run)
+
+    if (run.ErrorCount > 0)
+        ExitApp(2)
+    ExitApp(run.DiagnosticCount > 0 ? 1 : 0)
 }
 
 /**
- * Lints the given file
- * 
- * @param {String} filepath path of the file to lint 
- * @returns {Integer} the number of diagnostics emitted
+ * Lint one file and record it on the run. A file that throws is recorded as an
+ * error rather than aborting the walk, so one unparseable file in a directory
+ * doesn't lose the results of every other file.
+ *
+ * @param {String} filepath path of the file to lint
+ * @param {Config} cfg the resolved config
+ * @param {LintRun} run the run to record the result on
+ * @param {Array} formatters formatters to notify
+ * @returns {FileResult} the recorded result
  */
-LintFile(filepath, cfg) {
-    source := FileRead(filepath, "RAW")
-    diagnostics := Linter(AutoHotkeyLang(), source, cfg).Run()
+LintFile(filepath, cfg, run, formatters) {
+    for formatter in formatters
+        formatter.OnFileStart(filepath)
 
-    for diag in diagnostics
-        Console.Out.WriteLine(diag.Format(filepath))
+    try {
+        source := FileRead(filepath, "RAW")
+        diagnostics := Linter(AutoHotkeyLang(), source, cfg).Run()
+        result := run.AddFile(filepath, SourceText(source), diagnostics)
+    } catch as e {
+        result := run.AddError(filepath, e)
+    }
 
-    Console.Out.WriteLine(Format("{1} problem(s)", diagnostics.Length))
-    return diagnostics.Length
+    for formatter in formatters
+        formatter.OnFile(result)
+
+    return result
 }
 
 GetFullPathName(path) {
@@ -78,12 +111,14 @@ GetFullPathName(path) {
 }
 
 /**
- * Parse argv into { file, configPath, target }. Accepts `--config <path>` and
- * `--target <ver>` anywhere; the first positional argument is the file. Unknown
- * `--options` and missing flag values are hard errors (usage + exit 2).
+ * Parse argv into { file, configPath, target, noColor, showVersion }. Accepts
+ * `--config <path>` and `--target <ver>` anywhere; the first positional argument
+ * is the file. Unknown `--options` and missing flag values are hard errors
+ * (usage + exit 2).
  */
 ParseArgs(argv, stderr) {
-    out := { file: "", configPath: "", target: "", noColor : !!EnvGet("NO_COLOR") }
+    out := { file: "", configPath: "", target: "", noColor : !!EnvGet("NO_COLOR"),
+             showVersion: false }
     i := 1
     while (i <= argv.Length) {
         arg := argv[i]
@@ -98,6 +133,8 @@ ParseArgs(argv, stderr) {
                 out.target := argv[++i]
             case "--no-color":
                 out.noColor := true
+            case "--version":
+                out.showVersion := true
             default:
                 if (SubStr(arg, 1, 2) == "--")
                     Die(stderr, "unknown option: " arg)
@@ -149,6 +186,7 @@ LoadConfig(args, filepath, stderr) {
 
 Die(stderr, message) {
     stderr.WriteLine(Red("ahklint: ") message)
-    stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] <file.ahk>")
+    stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] [--no-color] <file.ahk>")
+    stderr.WriteLine("       ahklint --version")
     ExitApp(2)
 }

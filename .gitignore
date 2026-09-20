@@ -2,6 +2,8 @@ junit.xml
 *.junit.xml
 bin/
 
+*.exe
+
 # Generated barrel not tracked
 src/lints/all.ahk
 

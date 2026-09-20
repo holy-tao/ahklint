@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
 #Import "./Docs.ahk" { DocsUrl }
-#Import Colors { Red, Yellow, Cyan, Magenta }
+#Import "collections/Typed/TypedArray" { TypedArray }
 
 /**
  * A single lint finding. Field names mirror an LSP Diagnostic closely enough
@@ -14,65 +14,44 @@ export class Diagnostic {
      * @param {String} message the human-readable message
      * @param {String} severity resolved severity; defaults to meta.severity when
      *        a caller (or test) doesn't pass a config-resolved value
+     * @param {Array<Fix>} fixes optional edits that resolve the finding, each
+     *        `{ startByte, endByte, newText }`.
      */
-    __New(meta, node, message, severity?) {
+    __New(meta, node, message, severity?, fixes?) {
         this.code     := meta.id          ; lint id           -> LSP `code`
         this.severity := IsSet(severity) ? severity : meta.severity  ; config wins (Linter.Report)
         this.docs     := DocsUrl(meta.id) ; doc URL (derived)  -> LSP `codeDescription.href`
         this.message  := message
+        ; Runtime type checking only when not compiled
+        this.fix      := A_IsCompiled
+            ? (fixes ?? [])
+            : TypedArray(Fix, (fixes ?? [])*)
 
         ; Keep both span forms: byte offsets for slicing source, row/col for editors.
+        ; Note that `start.column` / `end.column` are BYTE columns - render through
+        ; SourceText.Utf16Column instead of using them directly.
         this.startByte := node.StartByte
         this.endByte   := node.EndByte
         this.start     := node.StartPoint ; Point {row, column}, 0-indexed
         this.end       := node.EndPoint
     }
 
-    /**
-     * Human-readable output for the console
-     */
-    Format(file) {
-        color := this.severity = "warn" ? Yellow : Red
+    /** Whether this finding carries edits that would resolve it. */
+    HasFix => this.fix.Length > 0
+}
 
-        str := Format("{1}:{2}:{3} [{4}] {5}:`n", file, 
-            this.start.row + 1, this.start.column + 1, Magenta(this.code), color(this.severity))
-        str .= "Line |`n"
+/**
+ * An edit fixing a diagnostic.
+ */
+class Fix {
+    __New(startByte, endByte, newText) {
+        ;@ahk2exe-ignorebegin
+        if endByte <= startByte
+            throw ValueError(Format("EndByte must be > startByte (got {1} , {2})", startByte, endByte))
+        ;@ahk2exe-ignoreend
 
-        line := this._ReadLine(file, this.start.row + 1)
-
-        ; Only the first line of a multi-line span is shown: underline from the
-        ; start column to the end of that line and note where the span ends.
-        multiline := this.end.row > this.start.row
-        endCol := Max(multiline ? StrLen(line) : this.end.column, this.start.column)
-
-        lineStart := SubStr(line, 1, this.start.column)
-        errPart := SubStr(line, this.start.column + 1, endCol - this.start.column)
-        lineEnd := SubStr(line, endCol + 1)
-
-        coloredLine := lineStart color(errPart) lineEnd
-
-        str .= Format("{1:4} | {2}`n", this.start.row + 1, coloredLine)
-        str .= Format("     | {1}{2}{3}`n",
-            this._StrRepeat(" ", this.start.column),
-            color(this._StrRepeat("~", endCol - this.start.column)),
-            multiline ? Format(" (continues to line {1})", this.end.row + 1) : "")
-
-        str .= Format("     | {1}`n", this.message)
-        str .= Format("     | See: {1}`n", Cyan(this.docs))
-        return str
-    }
-
-    _ReadLine(file, line) {
-        file := FileOpen(file, "r")
-        loop (line - 1)
-            file.ReadLine()
-        return StrReplace(file.ReadLine(), "`t", " ")
-    }
-
-    _StrRepeat(str, amt) {
-        out := "", VarSetStrCapacity(&out, Max(amt, 0) + 1)
-        loop amt 
-            out .= str
-        return out 
+        this.startByte := Integer(startByte)
+        this.endByte := Integer(endByte)
+        this.newText := String(newText)
     }
 }
