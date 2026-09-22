@@ -71,9 +71,11 @@ export CreateSarif(run, root) {
         artifacts.Push(artifact)
 
         if fileResult.HasError {
+            formattedError := Format("failed to lint: {1}`r`n    Specifically: {2}`r`n`r`n{3}",
+                fileResult.error.Message, fileResult.error.Extra, fileResult.error.Stack)
             notifications.Push(Map(
                 "level", "error",
-                "message", Map("text", "failed to lint: " fileResult.error.Message),
+                "message", Map("text", "failed to lint: " formattedError),
                 "locations", [Map("physicalLocation", Map("artifactLocation", location))]
             ))
             continue
@@ -165,7 +167,7 @@ CreateResult(diag, src, location, ruleIndex) {
 
     if diag.HasFix {
         replacements := []
-        for fix in diag.fix {
+        for fix in diag.fixes {
             replacements.Push(Map(
                 "deletedRegion", Region(src, fix.startByte, fix.endByte),
                 "insertedContent", Map("text", fix.newText)

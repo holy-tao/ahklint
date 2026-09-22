@@ -44,6 +44,10 @@ export class ConsoleFormatter {
         if result.HasError {
             this._out.WriteLine(Format("{1} {2}: {3}",
                 Red("failed to lint"), result.path, result.error.Message))
+            if result.error.extra {
+                this._out.WriteLine("    Specifically: " result.error.extra "`n")
+            }
+            this._out.WriteLine(result.error.Stack)
             return
         }
 
