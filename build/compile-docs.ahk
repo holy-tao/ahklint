@@ -65,6 +65,11 @@ for cls in ALL_LINTS {
     ; Gate: every non-default option value must be exercised by some example.
     CheckOptionCoverage(meta, prose, className ".md")
 
+    ; Gate: precision is optional, but must be a value SARIF accepts.
+    if HasProp(meta, "precision") && !RegExMatch(meta.precision, "^(very-high|high|medium|low)$")
+        throw Error(Format('lint "{1}" has invalid precision "{2}" (expected "very-high", "high", "medium", or "low")',
+            meta.id, meta.precision))
+
     outDir := contentDir "\" meta.category
     DirCreate(outDir)
 

@@ -25,6 +25,7 @@ class NoGotos {
         severity:    "off",                ; default severity
         fixable:     "suggestion",         ; "auto" | "suggestion" | "none"
         recommended: false,                ; member of the "recommended" preset?
+        precision:   "high",               ; optional: "very-high" | "high" (default) | "medium" | "low"
         references:  [                      ; external "see also" links
             "https://www.autohotkey.com/docs/v2/lib/Goto.htm"
         ]
@@ -110,3 +111,10 @@ has no example.
 Your `lint.md` file is also used in the generated website and will be linked to in linter output. The doc URL is
 derived automatically from your `meta.id` (`https://holy-tao.github.io/ahklint/lints/<id>`) — don't add a `docs:`
 field to `meta`. Every lint must ship a `.md` with at least one `;~ <id>` example, or the docs build will fail.
+
+The introduction of your `.md` is the text before its first heading or code block. The build embeds it in the
+executable as the rule description for SARIF output. Its first paragraph becomes the one-line description that code
+scanning tools show, so write that paragraph so that it makes sense on its own.
+
+`precision` tells code scanning tools how often the lint is right when it fires. Set `"medium"` or `"low"` for a lint
+that can report false positives. If you omit it, the value is `"high"`.

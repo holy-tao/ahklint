@@ -11,6 +11,7 @@
 #Import "./src/SourceText.ahk" { SourceText }
 #Import "./src/Version.ahk" { AHKLINT_VERSION }
 #Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
+#Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
 #Import "./src/lints/all.ahk" { ALL_LINTS }
 #Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red, Yellow }
 
@@ -23,7 +24,7 @@ Console.Attach()
 main()
 
 /**
- * CLI entry point: `ahklint [--config <path>] [--target <ver>] <file.ahk>`
+ * CLI entry point: `ahklint [--config <path>] [--target <ver>] [--sarif <path>] <file.ahk>`
  *
  * Collects every file's findings into one LintRun and hands them to the
  * formatters. The run is built even for a single file, because a format like
@@ -55,7 +56,13 @@ main() {
     isDir := !!InStr(FileGetAttrib(filepath), "D")
 
     ; The console streams as it goes; whole-run formats buffer on `run` instead.
-    formatters := [ConsoleFormatter(Console.Out, isDir)]
+    ; `--sarif -` puts SARIF on stdout, so the console output is dropped rather
+    ; than mixed into the JSON.
+    formatters := []
+    if (args.sarifPath != "-")
+        formatters.Push(ConsoleFormatter(Console.Out, isDir))
+    if (args.sarifPath != "")
+        formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
     if isDir {
         ; Directory - lint all files in it and subdirectories
@@ -103,6 +110,31 @@ LintFile(filepath, cfg, run, formatters) {
     return result
 }
 
+/**
+ * Create the SARIF formatter for `--sarif <path>`. The file is opened before
+ * linting starts, so an unwritable path fails fast instead of after the run.
+ *
+ * @param {String} path where to write, or "-" for stdout
+ * @param {File} stderr where to report a failure
+ * @returns {SarifFormatter}
+ */
+OpenSarifFormatter(path, stderr) {
+    if (path == "-")
+        return SarifFormatter(Console.Out)
+
+    try {
+        SplitPath(GetFullPathName(path), , &dir)
+        if !DirExist(dir)
+            DirCreate(dir)
+        stream := FileOpen(path, "w", "UTF-8-RAW")   ; SARIF is UTF-8 with no BOM
+    }
+    if !IsSet(stream) || !stream {
+        stderr.WriteLine(Red("ahklint: ") "cannot write " path)
+        ExitApp(2)
+    }
+    return SarifFormatter(stream, true)
+}
+
 GetFullPathName(path) {
     cc := DllCall("GetFullPathName", "str", path, UInt32, 0, IntPtr, 0, IntPtr, 0, UInt32)
     buf := Buffer(cc*2)
@@ -111,14 +143,14 @@ GetFullPathName(path) {
 }
 
 /**
- * Parse argv into { file, configPath, target, noColor, showVersion }. Accepts
+ * Parse argv into { file, configPath, target, noColor, showVersion, sarifPath }. Accepts
  * `--config <path>` and `--target <ver>` anywhere; the first positional argument
  * is the file. Unknown `--options` and missing flag values are hard errors
  * (usage + exit 2).
  */
 ParseArgs(argv, stderr) {
     out := { file: "", configPath: "", target: "", noColor : !!EnvGet("NO_COLOR"),
-             showVersion: false }
+             showVersion: false, sarifPath: "" }
     i := 1
     while (i <= argv.Length) {
         arg := argv[i]
@@ -135,6 +167,10 @@ ParseArgs(argv, stderr) {
                 out.noColor := true
             case "--version":
                 out.showVersion := true
+            case "--sarif":
+                if (i == argv.Length)
+                    Die(stderr, "--sarif requires a path")
+                out.sarifPath := argv[++i]
             default:
                 if (SubStr(arg, 1, 2) == "--")
                     Die(stderr, "unknown option: " arg)
@@ -186,7 +222,7 @@ LoadConfig(args, filepath, stderr) {
 
 Die(stderr, message) {
     stderr.WriteLine(Red("ahklint: ") message)
-    stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] [--no-color] <file.ahk>")
+    stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] [--sarif <path>] [--no-color] <file.ahk>")
     stderr.WriteLine("       ahklint --version")
     ExitApp(2)
 }

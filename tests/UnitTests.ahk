@@ -6,6 +6,9 @@
 
 #Import "../src/Config.ahk" { Config }
 #Import "../src/Linter.ahk" { DEFAULT_TARGET }
+#Import "../src/LintRun.ahk" { LintRun }
+#Import "../src/SourceText.ahk" { SourceText }
+#Import "../src/formatters/SarifFormatter.ahk" { CreateSarif }
 
 ; Controlled lints so resolution is deterministic regardless of the real set.
 
@@ -37,6 +40,37 @@ _FakeRegistry() => [_FakeRecommended, _FakeOptional, _FakeNewOnly, _FakeWithOpti
 ; Config with the given options map on fake-options
 _OptionsConfig(opts) =>
     Config(Map("lints", Map("fake-options", ["warn", opts])), _FakeRegistry(), "2.0")
+
+/**
+ * A SARIF log for a two-file run with every lint enabled: one file with a
+ * non-ASCII line and a `no-cdecl` finding, and one file that failed to lint.
+ * Round-tripped through JSON, so the tests see what a consumer would.
+ */
+_SarifLog() {
+    static log := ""
+    if log != ""
+        return log
+
+    root := A_Temp "\ahklint-sarif-test"
+    code := 'x := "日本語", DllCall("f", "cdecl int")`n'
+    buf := Buffer(StrPut(code, "UTF-8") - 1)
+    StrPut(code, buf, "UTF-8")
+
+    cfg := Config(Map("extends", "all"), ALL_LINTS, "2.1-alpha.30")
+    run := LintRun(cfg)
+    run.AddFile(root "\a.ahk", SourceText(buf), Linter(AutoHotkeyLang(), buf, cfg).Run())
+    run.AddError(root "\b.ahk", Error("boom"))
+
+    return log := JSON.Parse(JSON.Dump(CreateSarif(run, root)))
+}
+
+/** The `no-cdecl` result from _SarifLog. */
+_SarifCdeclResult() {
+    for result in _SarifLog()["runs"][1]["results"]
+        if result["ruleId"] == "no-cdecl"
+            return result
+    throw Error("no no-cdecl result")
+}
 
 /**
  * Run every unit case, recording each into the shared JUnit writer.
@@ -156,6 +190,51 @@ _UnitCases() {
         _Throws(() => _OptionsConfig("mode=b"))
     cases["config: oversized tuple throws"] := () =>
         _Throws(() => Config(Map("lints", Map("fake-options", ["warn", Map(), 1])), _FakeRegistry(), "2.0"))
+
+    cases["sarif: results live inside the run"] := () {
+        log := _SarifLog()
+        _Assert(log["version"] == "2.1.0", "version")
+        _Assert(!log.Has("results") && !log.Has("artifacts"), "nothing at the log root")
+        _Assert(log["runs"].Length == 1, "one run")
+        _Assert(log["runs"][1]["results"].Length > 0, "results in the run")
+    }
+    cases["sarif: ruleIndex points at the matching rule"] := () {
+        run := _SarifLog()["runs"][1]
+        rules := run["tool"]["driver"]["rules"]
+        for result in run["results"]
+            _Assert(rules[result["ruleIndex"] + 1]["id"] == result["ruleId"],
+                "ruleIndex mismatch for " result["ruleId"])
+    }
+    cases["sarif: columns count UTF-16 units, not bytes"] := () {
+        region := _SarifCdeclResult()["locations"][1]["physicalLocation"]["region"]
+        ; `x := "日本語", DllCall("f", ` is 25 characters but 31 bytes
+        _Assert(region["startLine"] == 1, "startLine")
+        _Assert(region["startColumn"] == 26, "startColumn is " region["startColumn"])
+        _Assert(region["endColumn"] == 37, "endColumn is " region["endColumn"])
+    }
+    cases["sarif: fixes carry the replacement"] := () {
+        fixes := _SarifCdeclResult()["fixes"]
+        replacements := fixes[1]["artifactChanges"][1]["replacements"]
+        _Assert(replacements.Length == 1, "one replacement")
+        _Assert(!InStr(replacements[1]["insertedContent"]["text"], "cdecl"), "cdecl removed")
+        _Assert(replacements[1]["deletedRegion"]["startColumn"] == 26, "deletedRegion column")
+    }
+    cases["sarif: failed files become notifications"] := () {
+        invocation := _SarifLog()["runs"][1]["invocations"][1]
+        _Assert(invocation["executionSuccessful"] == 0, "run marked unsuccessful")
+        notes := invocation["toolExecutionNotifications"]
+        _Assert(notes.Length == 1 && InStr(notes[1]["message"]["text"], "boom"), "one notification")
+    }
+    cases["sarif: rules carry the doc introduction only"] := () {
+        for rule in _SarifLog()["runs"][1]["tool"]["driver"]["rules"] {
+            id := rule["id"]
+            _Assert(rule["fullDescription"]["text"] != rule["shortDescription"]["text"],
+                id ": fullDescription is just the title")
+            _Assert(rule["help"]["text"] != "", id ": empty help.text")
+            md := rule["help"]["markdown"]
+            _Assert(!InStr(md, "``````") && !InStr(md, ";~"), id ": examples leaked into help")
+        }
+    }
 
     return cases
 }
