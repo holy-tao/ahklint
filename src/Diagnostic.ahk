@@ -17,15 +17,15 @@ export class Diagnostic {
      * @param {Array<Fix>} fixes optional edits that resolve the finding, each
      *        `{ startByte, endByte, newText }`.
      */
-    __New(meta, node, message, severity?, fixes?) {
+    __New(meta, node, message, severity?, fixes := []) {
         this.code     := meta.id          ; lint id           -> LSP `code`
         this.severity := IsSet(severity) ? severity : meta.severity  ; config wins (Linter.Report)
         this.docs     := DocsUrl(meta.id) ; doc URL (derived)  -> LSP `codeDescription.href`
         this.message  := message
         ; Runtime type checking only when not compiled
-        this.fix      := A_IsCompiled
-            ? (fixes ?? [])
-            : TypedArray(Fix, (fixes ?? [])*)
+        this.fixes    := A_IsCompiled
+            ? (fixes is Array ? fixes : [fixes])
+            : TypedArray(Fix, (fixes is Array ? fixes : [fixes])*)
 
         ; Keep both span forms: byte offsets for slicing source, row/col for editors.
         ; Note that `start.column` / `end.column` are BYTE columns - render through
@@ -37,7 +37,7 @@ export class Diagnostic {
     }
 
     /** Whether this finding carries edits that would resolve it. */
-    HasFix => this.fix.Length > 0
+    HasFix => this.fixes.Length > 0
 }
 
 /**

@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
+#Import "../../Diagnostic" { Fix }
+
 /**
  * Style lint to disallow call statements and suggest standard Call()
  */
@@ -10,7 +12,7 @@ class NoCallStatements {
         category:    "style",
         versions:    ">=2.0",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "auto",
         recommended: false,
         references:  [
             "https://www.autohotkey.com/docs/alpha/Language.htm#function-call-statements",
@@ -24,9 +26,10 @@ class NoCallStatements {
             argsNode := node.GetChildByFieldName("arguments")
             args := argsNode.IsNull ? "" : Trim(argsNode.Text)
             
-            msg := Format("Use standard calls instead of call statements: ``{1}({2})``", fn, args)
+            replacement := Format("{1}({2})", fn, args)
+            msg := Format("Use standard calls instead of call statements: ``{1}``", replacement)
 
-            linter.Report(NoCallStatements.meta, node, msg)
+            linter.Report(NoCallStatements.meta, node, msg, [Fix.To(node, replacement)])
         })
     }
 }

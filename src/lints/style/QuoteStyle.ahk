@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
+#Import "../../Diagnostic" { Fix }
+
 /**
  * Enforce consistent quote styles for string literals.
  */
@@ -10,7 +12,7 @@ class QuoteStyle {
         category:    "style",
         versions:    ">=2.0",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "auto",
         recommended: true,
         references:  [
             "https://www.autohotkey.com/docs/v2/Language.htm#strings"
@@ -45,13 +47,14 @@ class QuoteStyle {
         if SubStr(text, 1, 1) == this.quote
             return
 
-        if this.avoidEscape  && node.type == "string_literal" ; continuation strings don't need quotes to be escaped
-            && QuoteStyle.HasUnescaped(SubStr(text, 2, -1), this.quote) 
+        unquoted := SubStr(text, 2, -1)
+        if this.avoidEscape && node.type == "string_literal" ; continuation strings don't need quotes to be escaped
+            && QuoteStyle.HasUnescaped(unquoted, this.quote) 
         {
             return
         }
 
-        linter.Report(QuoteStyle.meta, node, this.message)
+        linter.Report(QuoteStyle.meta, node, this.message, Fix.To(node, Format("{1}{2}{1}", this.quote, unquoted)))
     }
 
     /**

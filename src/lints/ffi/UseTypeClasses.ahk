@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
-#Import "../../lib/Util.ahk" { FlattenNode }
+#Import "../../lib/Util" { FlattenNode }
+#Import "../../Diagnostic" { Fix }
 
 ; TODO config opportunity - reasonable to allow "ptr" to keep the obj.ptr resolution logic
 
@@ -14,7 +15,7 @@ class UseTypeClasses {
         category:    "ffi",
         versions:    ">=2.1-alpha.23",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "suggestion",
         recommended: true,
         references:  [
             "https://www.autohotkey.com/docs/alpha/lib/DllCall.htm#types",
@@ -108,13 +109,15 @@ class UseTypeClasses {
         }
 
         if this.DllCallTypes.Has(nodeText) {
-            msg := Format("Use v2.1 type or struct classes: ``{1}{2}``", 
-                this.DllCallTypes[nodeText], isPtr ? ".Ptr" : "")
+            structClass := this.DllCallTypes[nodeText]
+            if isPtr
+                structClass .= ".Ptr"
+            msg := Format("Use v2.1 type or struct classes: ``{1}``", structClass)
 
             if nodeText = "ptr"
                 msg .= ". If this is a pointer to a struct, use ``StructClass.Ptr``."
             
-            linter.Report(UseTypeClasses.meta, argNode, msg)
+            linter.Report(UseTypeClasses.meta, argNode, msg, [Fix.To(argNode, structClass)])
         }
     }
 }
