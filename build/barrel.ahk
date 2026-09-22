@@ -25,10 +25,11 @@ if FileExist("all.ahk") {
     stdout.WriteLine("Overwriting existing 'all.ahk' file")
 }
 
-barrelFile := FileOpen("all.ahk", "w")
+barrelFile := FileOpen("all.ahk", "w", "UTF-8")   ; docs hold non-ASCII text
 
 count := 0
 classes := []
+intros := []
 
 barrelFile.WriteLine(banner)
 
@@ -41,6 +42,7 @@ loop files "*.ahk", "fr" {
 
     barrelFile.WriteLine(Format("#Import `"{1}`" { {2} }", A_LoopFileFullPath, className))
     classes.Push(className)
+    intros.Push(ReadIntro(SubStr(A_LoopFileFullPath, 1, -4) ".md"))
     count++
 }
 
@@ -49,9 +51,55 @@ for className in classes
     barrelFile.WriteLine("    " className ",")
 barrelFile.WriteLine("]")
 
+; Each lint's doc introduction, keyed by lint id, so that output formats like
+; SARIF can describe a rule without the .md files (which don't exist in the exe)
+barrelFile.WriteLine("`nexport global LINT_DOCS := Map(")
+for i, className in classes
+    barrelFile.WriteLine(Format("    {1}.meta.id,`n        {2}{3}",
+        className, AhkStringLiteral(intros[i]), i < classes.Length ? "," : ""))
+barrelFile.WriteLine(")")
+
 barrelFile.Close()
 
 stdout.WriteLine(Format("Built barrel with {1} lint files", count))
 
 stdout.Close()
 ExitApp(0)
+
+/**
+ * The introduction of a lint's doc: the prose before its first heading or code
+ * fence, without leading or trailing blank lines. Examples and test blocks come
+ * after it, so they never end up embedded. Returns "" if there is no doc.
+ */
+ReadIntro(mdPath) {
+    if !FileExist(mdPath)
+        return ""
+
+    intro := ""
+    for line in StrSplit(FileRead(mdPath, "UTF-8"), "`n", "`r") {
+        if RegExMatch(line, "^\s*(#|``````)")
+            break
+        intro .= line "`n"
+    }
+    return Trim(intro, " `t`n")
+}
+
+/**
+ * Render a string as an AHK expression: one quoted chunk per line, joined with
+ * `.` on continuation lines.
+ */
+AhkStringLiteral(str) {
+    if str == ""
+        return '""'
+
+    lines := StrSplit(str, "`n")
+    out := ""
+    for i, line in lines {
+        line := StrReplace(line, "``", "````")
+        line := StrReplace(line, '"', '``"')
+        line := StrReplace(line, ";", "``;")
+        chunk := '"' line (i < lines.Length ? "``n" : "") '"'
+        out .= i == 1 ? chunk : "`n      . " chunk
+    }
+    return out
+}
