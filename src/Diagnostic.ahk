@@ -54,4 +54,14 @@ class Fix {
         this.endByte := Integer(endByte)
         this.newText := String(newText)
     }
+
+    /**
+     * Construct a fix that replaces the given tree-sitter node with the given text.
+     * Use the standard constructor if the byte range to be replaced spans multiple nodes.
+     * 
+     * @param {Node} node tree-sitter node to be replaced 
+     * @param {String} newText the replacement text
+     * @returns {Fix} the new fix 
+     */
+    static To(node, newText) => Fix(node.StartByte, node.EndByte, newText)
 }

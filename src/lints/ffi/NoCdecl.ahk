@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
-#Import "../../lib/Util.ahk" { FlattenNode }
+#Import "../../lib/Util" { FlattenNode }
+#Import "../../Diagnostic" { Fix }
 
 class NoCdecl {
     static meta => {
@@ -9,7 +10,7 @@ class NoCdecl {
         category:    "ffi",
         versions:    ">=2.1-alpha.3",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "auto",
         recommended: true,
         references:  [
             "https://www.autohotkey.com/docs/alpha/lib/DllCall.htm#cdecl"
@@ -44,7 +45,8 @@ class NoCdecl {
         }
 
         if InStr(typeArg.Text, "cdecl") {
-            linter.Report(NoCdecl.meta, typeArg, message)
+            replacement := StrReplace(StrReplace(typeArg.Text, "cdecl"), " ")
+            linter.Report(NoCdecl.meta, typeArg, message, [Fix.To(typeArg, replacement)])
         }
     }
 }
