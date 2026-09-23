@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
+#Import "../../Diagnostic" { Fix }
+
 /**
  * Prefer `[1, 2, 3]` over `Array(1, 2, 3)`
  */
@@ -10,7 +12,7 @@ class PreferArrayBracketForm {
         category:    "style",
         versions:    ">=2.0",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "auto",
         recommended: true,
         references:  [
             "https://www.autohotkey.com/docs/alpha/lib/Array.htm",
@@ -33,8 +35,9 @@ class PreferArrayBracketForm {
                     : fullArgStr
             }
 
+            patch := Fix.To(node, Format("[{1}]", args.IsNull ? "" : args.text))
             linter.Report(PreferArrayBracketForm.meta, node,
-                Format("Prefer the bracket list form: ``[{1}]``", argStr))
+                Format("Prefer the bracket list form: ``[{1}]``", argStr), patch)
         })
     }
 }
