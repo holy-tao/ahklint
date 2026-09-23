@@ -26,6 +26,7 @@ export class Diagnostic {
         this.fixes    := A_IsCompiled
             ? (fixes is Array ? fixes : [fixes])
             : TypedArray(Fix, (fixes is Array ? fixes : [fixes])*)
+        this.fixable  := meta.fixable
 
         ; Keep both span forms: byte offsets for slicing source, row/col for editors.
         ; Note that `start.column` / `end.column` are BYTE columns - render through

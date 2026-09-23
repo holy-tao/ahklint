@@ -8,11 +8,11 @@ export class FileResult {
      * @param {Array<Diagnostic>} diagnostics the findings, empty when clean
      * @param {Error} error optional - the failure that stopped this file
      */
-    __New(path, source?, diagnostics?, error?) {
+    __New(path, source := "", diagnostics := [], error := "") {
         this.path        := path
-        this.source      := source ?? ""
-        this.diagnostics := diagnostics ?? []
-        this.error       := error ?? ""
+        this.source      := source
+        this.diagnostics := diagnostics
+        this.error       := error
     }
 
     HasError => this.error != ""

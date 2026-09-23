@@ -14,6 +14,7 @@
 #Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
 #Import "./src/lints/all.ahk" { ALL_LINTS }
 #Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red, Yellow }
+#Import "./src/Fix" { ApplyFixes }
 
 #Import "utils/Console" { Console }
 
@@ -75,6 +76,25 @@ main() {
 
     for formatter in formatters
         formatter.OnFinish(run)
+
+    if args.fix {
+        for result in run.results {
+            fixed := ApplyFixes(result)
+            if !(fixed is Buffer)
+                continue
+            try {
+                ; The buffer already holds the file's own bytes (and BOM, if any), so
+                ; open with a RAW encoding to keep FileOpen from adding a BOM
+                f := FileOpen(result.path, "w", "UTF-8-RAW")
+                f.RawWrite(fixed)
+                f.Close()
+            }
+            catch Error as err {
+                Console.Err.WriteLine(Red("Error writing file ") result.path ": " err.message)
+                result.error := err  ; counted by run.ErrorCount
+            }
+        }
+    }
 
     if (run.ErrorCount > 0)
         ExitApp(2)
@@ -150,7 +170,7 @@ GetFullPathName(path) {
  */
 ParseArgs(argv, stderr) {
     out := { file: "", configPath: "", target: "", noColor : !!EnvGet("NO_COLOR"),
-             showVersion: false, sarifPath: "" }
+             showVersion: false, sarifPath: "", fix: false }
     i := 1
     while (i <= argv.Length) {
         arg := argv[i]
@@ -167,6 +187,8 @@ ParseArgs(argv, stderr) {
                 out.noColor := true
             case "--version":
                 out.showVersion := true
+            case "--fix":
+                out.fix := true
             case "--sarif":
                 if (i == argv.Length)
                     Die(stderr, "--sarif requires a path")
@@ -222,7 +244,7 @@ LoadConfig(args, filepath, stderr) {
 
 Die(stderr, message) {
     stderr.WriteLine(Red("ahklint: ") message)
-    stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] [--sarif <path>] [--no-color] <file.ahk>")
+    stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] [--sarif <path>] [--no-color] [--fix] <file.ahk>")
     stderr.WriteLine("       ahklint --version")
     ExitApp(2)
 }
