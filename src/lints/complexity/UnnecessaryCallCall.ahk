@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
+#Import "../../Diagnostic" { Fix }
+
 class UnnecessaryCallCall {
     static meta => {
         id:          "unnecessary-call-call",
@@ -7,7 +9,7 @@ class UnnecessaryCallCall {
         category:    "complexity",
         versions:    ">=2.0",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "auto",
         recommended: true,
         references:  [
             "https://www.autohotkey.com/docs/alpha/Language.htm#function-calls",
@@ -22,8 +24,13 @@ class UnnecessaryCallCall {
 
             member := callee.GetChildByFieldName("member")
             if Trim(member.text) = "call" {
+                argsNode := node.GetChildByFieldName("arguments")
+                patch := Fix.To(node, Format("{1}({2})", 
+                    callee.GetChildByFieldName("object").text,
+                    argsNode.IsNull ? "" : argsNode.text))
+
                 message := Format("Unnecessary call to ``Call`` - ``()`` invokes it implicitly.")
-                linter.Report(UnnecessaryCallCall.meta, node, message)
+                linter.Report(UnnecessaryCallCall.meta, node, message, patch)
             }
         })
     }
