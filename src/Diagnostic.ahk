@@ -47,8 +47,8 @@ export class Diagnostic {
 class Fix {
     __New(startByte, endByte, newText) {
         ;@ahk2exe-ignorebegin
-        if endByte <= startByte
-            throw ValueError(Format("EndByte must be > startByte (got {1} , {2})", startByte, endByte))
+        if endByte < startByte
+            throw ValueError(Format("EndByte must be >= startByte (got {1} , {2})", startByte, endByte))
         ;@ahk2exe-ignoreend
 
         this.startByte := Integer(startByte)
