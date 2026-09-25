@@ -24,7 +24,7 @@ class LineCommentSpacing {
     __New(linter) {
         linter.OnEnter("line_comment", (linter, node) {
             allowEmpty := linter.Options(LineCommentSpacing.meta).allowEmpty
-            nodeText := node.text
+            nodeText := LTrim(node.text)
 
             ; check for empty comment and quit early, otherwise we'd double report
             if Trim(nodeText, " `r`n`t") == ";" {
