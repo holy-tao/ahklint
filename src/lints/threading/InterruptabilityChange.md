@@ -22,7 +22,7 @@ If you need to perform an uninterruptible (atomic) action, use [`Critical`] inst
 ### Incorrect
 
 ```autohotkey test
-Thread("interrupt", 10) ;~ no-interrupt-changes
+Thread("interrupt", 10) ;~ interruptability-change
 ```
 
 ### Correct

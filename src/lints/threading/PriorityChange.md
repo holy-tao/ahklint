@@ -17,7 +17,7 @@ If you need to perform an uninterruptible (atomic) action, use [`Critical`] inst
 ### Incorrect
 
 ```autohotkey test
-Thread("priority", 10) ;~ no-priority-changes
+Thread("priority", 10) ;~ priority-change
 ```
 
 ### Correct

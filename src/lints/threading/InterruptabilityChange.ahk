@@ -2,10 +2,10 @@
 
 #Import "../../lib/Util.ahk" { FlattenNode, GetArg }
 
-class NoInterruptabilityChanges {
+class InterruptabilityChange {
     static meta => {
-        id:          "no-interrupt-changes",
-        title:       "Do Not Change Thread Interruptability",
+        id:          "interruptability-change",
+        title:       "Changed Thread Interruptability",
         category:    "threading",
         versions:    ">=2.0",
         severity:    "warn",
@@ -32,7 +32,7 @@ class NoInterruptabilityChanges {
 
         subFunction := FlattenNode(subFunction)
         if (subFunction.Type == "string_literal") && InStr(subFunction.Text, "interrupt") {
-            linter.Report(NoInterruptabilityChanges.meta, node, 
+            linter.Report(InterruptabilityChange.meta, node, 
                 "Most scripts perform more consistently with default thread interrupt settings.")
         }
     }

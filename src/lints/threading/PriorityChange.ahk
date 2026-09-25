@@ -2,10 +2,10 @@
 
 #Import "../../lib/Util.ahk" { FlattenNode, GetArg }
 
-class NoPriorityChanges {
+class PriorityChange {
     static meta => {
-        id:          "no-priority-changes",
-        title:       "Do Not Change Thread Priority",
+        id:          "priority-change",
+        title:       "Changed Thread Priority",
         category:    "threading",
         versions:    ">=2.0",
         severity:    "error",
@@ -32,7 +32,7 @@ class NoPriorityChanges {
 
         subFunction := FlattenNode(subFunction)
         if (subFunction.Type == "string_literal") && InStr(subFunction.Text, "priority") {
-            linter.Report(NoPriorityChanges.meta, node, 
+            linter.Report(PriorityChange.meta, node, 
                 "Threads starting at a lower priority are dropped, not buffered. Use ``Critical`` for uninterruptible operations.")
         }
     }
