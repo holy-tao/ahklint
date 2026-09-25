@@ -1,5 +1,5 @@
 Identifies [dynamic property declarations][dynamic property declaration] that can be collapsed into their
-fat-arrow forms, or whose getters and/or setters can be collapsed into theri fat-arrow forms.
+fat-arrow forms, or whose getters and/or setters can be collapsed into their fat-arrow forms.
 
 Using blocks in this case makes your code unnecessarily verbose.
 
@@ -8,6 +8,8 @@ Using blocks in this case makes your code unnecessarily verbose.
 ## Examples
 
 ### Incorrect
+
+A property declaration with only a getter can be collapsed into the `propName => getterBody` form:
 
 ```autohotkey test
 class Example {
@@ -18,6 +20,9 @@ class Example {
     }
 }
 ```
+
+If a getter and a setter are both present, they can be collapsed to use the `get =>getterBody`
+and `set => setterBody(value)` forms.
 
 ```autohotkey test
 class Example {
@@ -62,6 +67,15 @@ class Example {
     property {
         get => this.GetProperty()
         set => this.SetProperty(value)
+    }
+}
+```
+
+```autohotkey test
+class Example {
+    property {
+        get => this.GetProperty()
+        set => throw(Error("property is read-only"))
     }
 }
 ```
