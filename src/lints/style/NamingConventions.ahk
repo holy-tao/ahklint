@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
 #Import "../../lib/Util.ahk" { GetChildOfType, FlattenNode, FirstNamedChildOfType }
+#Import "../../Diagnostic" { Fix }
 
 ; Patterns avoid nested quantifiers: `(?:[a-z0-9]+[A-Z]*)*` backtracks exponentially
 ; on names like `somereallylongname_x` and hits PCRE's match limit.
@@ -53,7 +54,7 @@ class NamingConventions {
         category:    "style",
         versions:    ">=2.0",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "suggestion",
         recommended: false,
         references:  [],
         options: {
@@ -225,14 +226,20 @@ class NamingConventions {
             return
 
         switch style {
-            case "PascalCase": ok := IsPascalCase(ident)
-            case "camelCase":  ok := IsCamelCase(ident)
+            case "PascalCase":
+                ok := IsPascalCase(ident)
+                replacement := StrTitle(ident)
+            case "camelCase":
+                ok := IsCamelCase(ident)
+                replacement := StrLower(SubStr(ident, 1, 1)) . SubStr(ident, 2)
             default:
                 throw ValueError(Format("Unknown style '{1}'", style))
         }
 
-        if !ok
-            linter.Report(NamingConventions.meta, node, Format("{1} names should be {2}", StrTitle(kind), style))
+        if !ok {
+            linter.Report(NamingConventions.meta, node,
+                Format("{1} names should be {2}", StrTitle(kind), style), Fix.To(node, replacement))
+        }
     }
 
     /**
