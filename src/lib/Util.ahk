@@ -39,6 +39,21 @@ GetChildOfType(node, type) {
 }
 
 /**
+ * Find the first named child of `node` with type `type`. Returns a null node if
+ * no such child is found
+ * @returns {Node} the found node 
+ */
+TryGetChildOfType(parent, type) {
+    loop parent.NamedChildCount {
+        child := parent.GetNamedChild(A_Index - 1)
+        if child.Type == type
+            return child
+    }
+
+    return Node()
+}
+
+/**
  * Get the nth argument of a function, or `unset` if it does not exist
  * @param {Node} fnNode 
  * @param {Integer} argIndex 
