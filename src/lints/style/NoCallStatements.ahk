@@ -22,14 +22,18 @@ class NoCallStatements {
 
     __New(linter) {
         linter.OnEnter("call_statement", (linter, node) {
-            fn := Trim(node.GetChildByFieldName("function").Text)
+            fnNode := node.GetChildByFieldName("function")
+            fn := Trim(fnNode.Text)
             argsNode := node.GetChildByFieldName("arguments")
             args := argsNode.IsNull ? "" : Trim(argsNode.Text)
             
             replacement := Format("{1}({2})", fn, args)
             msg := Format("Use standard calls instead of call statements: ``{1}``", replacement)
 
-            linter.Report(NoCallStatements.meta, node, msg, [Fix.To(node, replacement)])
+            linter.Report(NoCallStatements.meta, node, msg, [
+                Fix(fnNode.endByte, argsNode.startByte, "("),
+                Fix.Insert(argsNode.endByte, ")")
+            ])
         })
     }
 }

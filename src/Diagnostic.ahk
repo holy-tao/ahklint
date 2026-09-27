@@ -65,4 +65,15 @@ class Fix {
      * @returns {Fix} the new fix 
      */
     static To(node, newText) => Fix(node.StartByte, node.EndByte, newText)
+
+    /**
+     * Construct a fix that inserts some text at the given byte offset.
+     * 
+     * @param {Integer} byte the byte at which to instert the new text 
+     * @param {String} newText the text to insert 
+     * @returns {Fix} the new fix object
+     */
+    static Insert(byte, newText) => Fix(byte, byte, newText)
+
+    ToString() => Format("Fix([{1}, {2}) -> {3})", this.startByte, this.endByte, this.newText)
 }
