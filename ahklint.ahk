@@ -4,7 +4,7 @@
 #DllLoad "./bin/tree-sitter.dll"
 #DllLoad "./bin/tree-sitter-autohotkey.dll"
 
-#Import "./src/CLI.ahk" { ParseArgs }
+#Import "./src/CLI.ahk" { ParseArgs, ShowVersion, ShowHelp }
 #Import "./src/Linter.ahk" { Linter, DEFAULT_TARGET }
 #Import "./src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
 #Import "./src/Config.ahk" { Config }
@@ -36,6 +36,14 @@ main()
 main() {
     args := ParseArgs(A_Args)
     SetANSIColorsEnabled(!args.noColor)
+
+    ; Done here so that help and version respects NO_COLOR
+    if args.showVersion {
+        ShowVersion()
+    } else if args.showHelp {
+        ShowHelp()
+        ExitApp(0)
+    }
 
     filepath := args.file
     if (filepath == "")
