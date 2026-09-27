@@ -35,9 +35,11 @@ class PreferArrayBracketForm {
                     : fullArgStr
             }
 
-            patch := Fix.To(node, Format("[{1}]", args.IsNull ? "" : args.text))
+            arrayPatch := Fix(callee.startByte, callee.NextSibling.endByte, "[") ; NextSibling gets the anonymous "("
+            closingPatch := Fix.To(node.GetChild(node.ChildCount - 1), "]")      ; last child is the anonymous ")"
+
             linter.Report(PreferArrayBracketForm.meta, node,
-                Format("Prefer the bracket list form: ``[{1}]``", argStr), patch)
+                Format("Prefer the bracket list form: ``[{1}]``", argStr), [arrayPatch, closingPatch])
         })
     }
 }
