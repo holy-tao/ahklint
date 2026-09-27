@@ -38,7 +38,7 @@ CollectPatches(result) {
 
     ; Remove overlapping patches
     return sorted.Reduce((deconflicted, patch) {
-        if deconflicted.length <= 0 || patch.startByte > deconflicted[-1].endByte
+        if deconflicted.length <= 0 || patch.startByte >= deconflicted[-1].endByte
             deconflicted.Push(patch)
         return deconflicted
     }, [])
