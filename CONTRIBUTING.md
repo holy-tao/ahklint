@@ -72,6 +72,22 @@ __New(linter) {
 }
 ```
 
+### Fixes
+
+Lints can optionally provide automatic fixes. A fix is one or more `Fix` objects specifying a **byte range** to
+replace and the text that should replace it. Fixes are applied automatically with the `--fix` command line argument.
+If fixes overlap, the first overlapping one is applied.
+
+In general, if you can provide an automatic fix, you should. If the fix might be wrong, set `fix` = `"suggestion"` in
+the `meta` block and still provide it; future editor integrations should let users opt into these if they want to.
+
+#### Best practices
+
+- In general, providing several disjoint fixes is preferable to providing one large one. For example, if all calls to
+  `Foo` should be replaced with calls to `Bar`, it may be tempting to construct a single `Fix` object that replaces
+  the entire call node with something like `Format("Bar({1})", fooArgs)`, but this produces a single large patch which
+  may swallow fixes to `fooArgs`. Instead, just replace the name of the function, keeping the arguments intact.
+
 ### Documentation and Tests
 
 Documentation and tests live beside the lint classes in `<lint-name>.md` files.
