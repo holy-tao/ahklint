@@ -4,12 +4,12 @@
 #DllLoad "./bin/tree-sitter.dll"
 #DllLoad "./bin/tree-sitter-autohotkey.dll"
 
+#Import "./src/CLI.ahk" { ParseArgs }
 #Import "./src/Linter.ahk" { Linter, DEFAULT_TARGET }
 #Import "./src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
 #Import "./src/Config.ahk" { Config }
 #Import "./src/LintRun.ahk" { LintRun }
 #Import "./src/SourceText.ahk" { SourceText }
-#Import "./src/Version.ahk" { AHKLINT_VERSION }
 #Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
 #Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
 #Import "./src/lints/all.ahk" { ALL_LINTS }
@@ -34,13 +34,8 @@ main()
  * Exit code: 2 if any file failed to lint, 1 if any finding fired, else 0.
  */
 main() {
-    args := ParseArgs(A_Args, Console.Err)   ; { file, configPath, target, ... }
+    args := ParseArgs(A_Args)
     SetANSIColorsEnabled(!args.noColor)
-
-    if args.showVersion {
-        Console.Out.WriteLine("ahklint " AHKLINT_VERSION)
-        ExitApp(0)
-    }
 
     filepath := args.file
     if (filepath == "")
@@ -163,48 +158,6 @@ GetFullPathName(path) {
 }
 
 /**
- * Parse argv into { file, configPath, target, noColor, showVersion, sarifPath }. Accepts
- * `--config <path>` and `--target <ver>` anywhere; the first positional argument
- * is the file. Unknown `--options` and missing flag values are hard errors
- * (usage + exit 2).
- */
-ParseArgs(argv, stderr) {
-    out := { file: "", configPath: "", target: "", noColor : !!EnvGet("NO_COLOR"),
-             showVersion: false, sarifPath: "", fix: false }
-    i := 1
-    while (i <= argv.Length) {
-        arg := argv[i]
-        switch arg {
-            case "--config":
-                if (i == argv.Length)
-                    Die(stderr, "--config requires a path")
-                out.configPath := argv[++i]
-            case "--target":
-                if (i == argv.Length)
-                    Die(stderr, "--target requires a version")
-                out.target := argv[++i]
-            case "--no-color":
-                out.noColor := true
-            case "--version":
-                out.showVersion := true
-            case "--fix":
-                out.fix := true
-            case "--sarif":
-                if (i == argv.Length)
-                    Die(stderr, "--sarif requires a path")
-                out.sarifPath := argv[++i]
-            default:
-                if (SubStr(arg, 1, 2) == "--")
-                    Die(stderr, "unknown option: " arg)
-                if (out.file == "")
-                    out.file := arg
-        }
-        i++
-    }
-    return out
-}
-
-/**
  * Resolve the target version and load/validate config. Target precedence:
  * --target flag > config "target" > DEFAULT_TARGET (with a one-line notice).
  * Config is discovered by walking up from the linted file unless --config is
@@ -240,11 +193,4 @@ LoadConfig(args, filepath, stderr) {
         stderr.WriteLine("ahklint: " e.message)
         ExitApp(2)
     }
-}
-
-Die(stderr, message) {
-    stderr.WriteLine(Red("ahklint: ") message)
-    stderr.WriteLine("usage: ahklint [--config <path>] [--target <ver>] [--sarif <path>] [--no-color] [--fix] <file.ahk>")
-    stderr.WriteLine("       ahklint --version")
-    ExitApp(2)
 }
