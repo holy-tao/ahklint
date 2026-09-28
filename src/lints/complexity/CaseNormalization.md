@@ -89,7 +89,8 @@ if Trim(StrLower(name), "xyz") == "bob" {
 
 A case-sensitive comparison whose result is fixed by the normalization, like comparing a lowercased string with one
 that has uppercase letters, is almost certainly a bug rather than an unneeded normalization. This lint doesn't report
-it, because switching to `=` would change what the code does:
+it, because switching to `=` would change what the code does. [`constant-comparison`](../constant-comparison/)
+reports it instead:
 
 ```autohotkey test
 if StrLower(name) == "Bob" {
