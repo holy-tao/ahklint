@@ -1,6 +1,6 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
-#Import "../Colors.ahk" { Red, Yellow, Cyan, Magenta }
+#Import "../Colors.ahk" { Red, Yellow, Cyan, Magenta, Gray }
 
 /*
  * ## The formatter protocol
@@ -90,7 +90,7 @@ export class ConsoleFormatter {
 
         str := Format("{1}:{2}:{3} [{4}] {5}:`n", result.path,
             row + 1, startCol + 1, Magenta(diag.code), color(diag.severity))
-        str .= "Line |`n"
+        str .= Gray("Line") " |`n"
 
         line := StrReplace(src.Line(row), "`t", " ")
 
@@ -107,7 +107,7 @@ export class ConsoleFormatter {
         str .= Format("     | {1}{2}{3}`n",
             this._StrRepeat(" ", startCol),
             color(this._StrRepeat("~", endCol - startCol)),
-            multiline ? Format(" (continues to line {1})", diag.end.row + 1) : "")
+            multiline ? Gray(Format(" (continues to line {1})", diag.end.row + 1)) : "")
 
         str .= Format("     | {1}`n", diag.message)
         str .= Format("     | See: {1}`n", Cyan(diag.docs))
