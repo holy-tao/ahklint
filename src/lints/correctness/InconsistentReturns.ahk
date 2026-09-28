@@ -12,7 +12,7 @@ class InconsistentReturns {
     static meta => {
         id:          "inconsistent-returns",
         title:       "Inconsistent Returns",
-        category:    "misc",
+        category:    "correctness",
         versions:    ">=2.0",
         severity:    "error",
         fixable:     "none",
