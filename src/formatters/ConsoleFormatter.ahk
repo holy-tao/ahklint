@@ -103,7 +103,11 @@ export class ConsoleFormatter {
         errPart   := SubStr(line, startCol + 1, endCol - startCol)
         lineEnd   := SubStr(line, endCol + 1)
 
-        str .= Format("{1:4} | {2}`n", row + 1, lineStart color(errPart) lineEnd)
+        loop Max(0, 4 - StrLen(String(row + 1)))
+            str .= " "
+        str .= Gray(row + 1)
+        str .= " | " lineStart color(errPart) lineEnd
+
         str .= Format("     | {1}{2}{3}`n",
             this._StrRepeat(" ", startCol),
             color(this._StrRepeat("~", endCol - startCol)),
