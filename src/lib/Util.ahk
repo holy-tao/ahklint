@@ -88,3 +88,19 @@ IsComment(node) {
             return false
     }
 }
+
+/**
+ * Joins strings with `delimiter`.
+ * @param {String} delimiter The delimiter 
+ * @param {String} strs Zero or more strings to join with `delimiter` 
+ */
+StrJoin(delimiter, strs*) {
+    outStr := ""
+    for(str in strs) {
+        outStr .= String(str)
+        if(A_Index < strs.Length)
+            outStr .= delimiter
+    }
+
+    return outStr
+}
