@@ -106,7 +106,7 @@ export class ConsoleFormatter {
         loop Max(0, 4 - StrLen(String(row + 1)))
             str .= " "
         str .= Gray(row + 1)
-        str .= " | " lineStart color(errPart) lineEnd
+        str .= " | " lineStart color(errPart) lineEnd "`n"
 
         str .= Format("     | {1}{2}{3}`n",
             this._StrRepeat(" ", startCol),
