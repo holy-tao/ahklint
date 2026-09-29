@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
 #Import "../../lib/Util" { StrJoin }
+#Import "../../lib/Format" { CollectPlaceholders }
 
 /**
  * Check for unmatched format placeholders or format arguments with no corresponding placeholders.
@@ -33,7 +34,7 @@ class UnmatchedFormatPlaceholder {
             return ; not a string literal, can't reliably analyze it
 
         fmtString := args.RemoveAt(1) ; args now only has the format placeholder matches
-        placeholders := UnmatchedFormatPlaceholder.CollectPlaceholders(fmtString.text)
+        placeholders := CollectPlaceholders(fmtString.text)
 
         ; Check for unmatched placeholders
         unmatched := placeholders.Filter(p => p.index > args.length).Map(p => p.text)
@@ -52,34 +53,5 @@ class UnmatchedFormatPlaceholder {
             linter.Report(UnmatchedFormatPlaceholder.meta, arg,
                 "Format argument " idx " has no matching placeholder")
         }
-    }
-
-    /**
-     * Collects all format placeholders in a Format string, returning an array of `{ text, index }` objects
-     * for each placeholder. The placeholders appear in the array in the order in which they appear in the
-     * string, which isn't necessarily the order of the arguments they consume; you have `{1}` as the third
-     * item.
-     *
-     * @param {String} fmtString the first argument to Format
-     * @returns {Array<{text, index}>} 
-     */
-    static CollectPlaceholders(fmtString) {
-        ; Per docs: "Omit the index to use the next input value in the sequence
-        ; (even if it has been used earlier in the string)"
-        lastIndex := 0, placeholders := []
-
-        match := "", pos := 1
-        while RegExMatch(fmtString, "{(?<idx>\d+)?:?[^{}]*}", &match, pos) {
-            placeholders.Push({
-                text: match[0],
-                index: IsInteger(match.idx)
-                    ? lastIndex := Integer(match.idx)
-                    : ++lastIndex 
-            })
-
-            pos := match.Pos + match.Len
-        }
-
-        return placeholders
     }
 }
