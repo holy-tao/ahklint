@@ -30,11 +30,15 @@ class UnmatchedFormatPlaceholder {
             return
 
         args := node.GetChildByFieldName("arguments").GetNamedChildren()
+        if args.length <= 0
+            return
+
         if args[1].type != "string_literal"
             return ; not a string literal, can't reliably analyze it
 
         fmtString := args.RemoveAt(1) ; args now only has the format placeholder matches
-        placeholders := CollectPlaceholders(fmtString.text)
+        ; Invalid placeholders are output as-is and never consume an argument; they're another lint's concern
+        placeholders := CollectPlaceholders(fmtString.text).Filter(p => p.IsValid)
 
         ; Check for unmatched placeholders
         unmatched := placeholders.Filter(p => p.index > args.length).Map(p => p.text)
