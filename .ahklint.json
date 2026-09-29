@@ -1,0 +1,16 @@
+{
+    "target":  "2.1-alpha.30",
+    "extends": "recommended",
+    "lints": {
+        "no-goto": "error",
+        "one-requires": "error",
+        "quote-style": ["warn", {"style": "double"}],
+        "control-flow-parentheses": ["warn", {"style": "forbidden"}],
+        "naming-conventions": "error",
+        "no-call-statements": "error",
+        "concat-style": ["warn", {
+            "style": "implicit",
+            "requireExplicitForNonLiteral": true
+        }]
+    }
+}
