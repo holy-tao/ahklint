@@ -82,7 +82,7 @@ main() {
 
     if args.fix {
         for result in run.results {
-            fixed := ApplyFixes(result)
+            fixed := ApplyFixes(result, args.applySuggestions)
             if !(fixed is Buffer)
                 continue
             try {

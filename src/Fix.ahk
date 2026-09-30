@@ -15,11 +15,15 @@ MoveMemory(source, destination, length) =>
  * edited twice. A later `--fix` pass can pick it up once the first edit is in.
  *
  * @param {FileResult} result the result to gather fixes for
+ * @param {Boolean} includeSuggestions if true, also apply suggestions
  * @returns {Array<Fix>} non-overlapping fixes, sorted by `startByte` ascending
  */
-CollectPatches(result) {
+CollectPatches(result, includeSuggestions) {
     candidates := result.diagnostics
-        .Filter(diag => diag.fixable == "auto" && diag.HasFix)
+        .Filter((diag) {
+            return diag.HasFix
+                && (diag.fixable == "auto" || (includeSuggestions && diag.fixable == "suggestion"))
+        })
         .Reduce((flat, current) {
             flat.Push(current.fixes*)
             return flat
@@ -73,14 +77,15 @@ Encode(text, encoding) {
  * TODO: Don't hardcode utf-8
  *
  * @param {FileResult} result the result to apply fixes to
+ * @param {Boolean} includeSuggestions if true, also apply suggestions
  * @returns {Buffer | String} a buffer containing the patched source code, or "" if there
  *          are no fixes to apply
  */
-export ApplyFixes(result) {
+export ApplyFixes(result, includeSuggestions := false) {
     if result.HasError || result.diagnostics.Length == 0
         return ""
 
-    patches := CollectPatches(result)
+    patches := CollectPatches(result, includeSuggestions)
     if patches.Length == 0
         return ""
 
