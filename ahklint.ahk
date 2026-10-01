@@ -15,6 +15,7 @@
 #Import "utils/Console" { Console }
 ;@Ahk2Exe-ConsoleApp
 
+ListLines(!A_IsCompiled)
 Console.Attach()
 
 main()
