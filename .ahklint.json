@@ -7,7 +7,7 @@
         "quote-style": ["warn", {"style": "double"}],
         "control-flow-parentheses": ["warn", {"style": "forbidden"}],
         "naming-conventions": "error",
-        "no-call-statements": "error",
+        "call-statement": "error",
         "concat-style": ["warn", {
             "style": "implicit",
             "requireExplicitForNonLiteral": true
