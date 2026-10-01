@@ -7,7 +7,8 @@ class DuplicateHotkeyModifier {
     static meta => {
         id:          "duplicate-hotkey-modifier",
         title:       "Duplicate Hotkey Modifier",
-        category:    "hotkeys",
+        category:    "suspicious",
+        tags:        ["hotkeys"],
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

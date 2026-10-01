@@ -9,7 +9,8 @@ class UseTypedCallbacks {
     static meta => {
         id:          "use-typed-callbacks",
         title:       "Use Typed Callbacks",
-        category:    "ffi",
+        category:    "style",
+        tags:        ["ffi"],
         versions:    ">=2.1-alpha.24",
         severity:    "warn",
         fixable:     "none",

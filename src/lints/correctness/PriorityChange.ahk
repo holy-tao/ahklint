@@ -6,7 +6,8 @@ class PriorityChange {
     static meta => {
         id:          "priority-change",
         title:       "Changed Thread Priority",
-        category:    "threading",
+        category:    "correctness",
+        tags:        ["threading"],
         versions:    ">=2.0",
         severity:    "error",
         fixable:     "none",

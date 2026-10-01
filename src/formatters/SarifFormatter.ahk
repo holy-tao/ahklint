@@ -123,6 +123,10 @@ CreateRule(meta) {
     if summary == ""
         summary := meta.title
 
+    tags := [meta.category]
+    if HasProp(meta, "tags")
+        tags.Push(meta.tags*)
+
     return Map(
         "id", meta.id,
         "helpUri", url,
@@ -135,7 +139,7 @@ CreateRule(meta) {
         ),
         "defaultConfiguration", Map("level", Level(meta.severity)),
         "properties", Map(
-            "tags", [meta.category],
+            "tags", tags,
             "precision", HasProp(meta, "precision") ? meta.precision : "high",
             "problem.severity", Level(meta.severity),
             "fixable", meta.fixable,

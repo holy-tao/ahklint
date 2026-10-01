@@ -7,7 +7,7 @@ class NoGotos {
     static meta => {
         id:          "no-goto",
         title:       "Disallow Goto",
-        category:    "misc",
+        category:    "style",
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

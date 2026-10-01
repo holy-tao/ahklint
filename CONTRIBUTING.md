@@ -20,7 +20,8 @@ class NoGotos {
     static meta := {
         id:          "no-goto",            ; stable string ID
         title:       "Disallow Goto",
-        category:    "misc",               ; for grouping, not a category ID
+        category:    "style",              ; kind of problem, see "Categories" below
+        tags:        [],                   ; optional: what the lint is about, e.g. ["ffi"]
         versions:    ">=2.0",              ; applicability range (VerCompare'd with the declared version of the linted file)
         severity:    "off",                ; default severity
         fixable:     "suggestion",         ; "auto" | "suggestion" | "none"
@@ -41,6 +42,22 @@ class NoGotos {
     }
 }
 ```
+
+### Categories
+
+A lint's `category` says what kind of problem it finds, not what part of the language it looks at. Every lint has
+exactly one, and lives in the folder of that name under [lints](src/lints/).
+
+| Category      | Meaning                                                              |
+|---------------|----------------------------------------------------------------------|
+| `correctness` | The code is wrong, or does something it should never do.             |
+| `suspicious`  | The code is probably wrong, or useless.                              |
+| `complexity`  | The code does something simple in an overly complicated way.         |
+| `perf`        | The code could be written to run faster.                             |
+| `style`       | The code works, but could be written more idiomatically.             |
+
+What a lint is about goes in the optional `tags`, for example `["ffi"]` for a lint on `DllCall`. A lint can have any
+number of tags.
 
 ### Options
 

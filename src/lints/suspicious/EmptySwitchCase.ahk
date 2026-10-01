@@ -4,7 +4,7 @@ class EmptySwitchCase {
     static meta => {
         id:          "empty-switch-case",
         title:       "Empty Switch Case",
-        category:    "misc",
+        category:    "suspicious",
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

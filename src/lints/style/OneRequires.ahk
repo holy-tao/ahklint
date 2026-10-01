@@ -7,7 +7,7 @@ class OneRequires {
     static meta => {
         id:          "one-requires",
         title:       "Declare One Requires Directive",
-        category:    "misc",
+        category:    "style",
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

@@ -6,7 +6,8 @@ class LastErrorInOSError {
     static meta => {
         id:          "lasterror-in-oserror",
         title:       "Passed LastError to OSError",
-        category:    "ffi",
+        category:    "complexity",
+        tags:        ["ffi"],
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "auto",

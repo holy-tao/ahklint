@@ -6,7 +6,7 @@ class EmptyBlock {
     static meta => {
         id:          "empty-block",
         title:       "Empty Block",
-        category:    "misc",
+        category:    "suspicious",
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

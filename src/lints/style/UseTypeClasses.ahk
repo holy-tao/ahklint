@@ -12,7 +12,8 @@ class UseTypeClasses {
     static meta => {
         id:          "use-type-classes",
         title:       "Use Type Classes",
-        category:    "ffi",
+        category:    "style",
+        tags:        ["ffi"],
         versions:    ">=2.1-alpha.23",
         severity:    "warn",
         fixable:     "suggestion",

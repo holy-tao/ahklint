@@ -75,7 +75,8 @@ class OSThreadBlock {
     static meta => {
         id:          "os-thread-block",
         title:       "OS Thread Block",
-        category:    "threading",
+        category:    "correctness",
+        tags:        ["threading"],
         versions:    ">=2.0",
         severity:    "error",
         fixable:     "none",

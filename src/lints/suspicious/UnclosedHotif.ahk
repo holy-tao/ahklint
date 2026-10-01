@@ -8,7 +8,8 @@ class UnclosedHotif {
     static meta => {
         id:          "unclosed-hotif",
         title:       "Unclosed HotIf Directive",
-        category:    "hotkeys",
+        category:    "suspicious",
+        tags:        ["hotkeys"],
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

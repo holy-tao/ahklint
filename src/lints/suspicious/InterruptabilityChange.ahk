@@ -6,7 +6,8 @@ class InterruptabilityChange {
     static meta => {
         id:          "interruptability-change",
         title:       "Changed Thread Interruptability",
-        category:    "threading",
+        category:    "suspicious",
+        tags:        ["threading"],
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

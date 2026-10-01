@@ -7,7 +7,8 @@ class NoCdecl {
     static meta => {
         id:          "no-cdecl",
         title:       "Always Omit CDecl",
-        category:    "ffi",
+        category:    "complexity",
+        tags:        ["ffi"],
         versions:    ">=2.1-alpha.3",
         severity:    "warn",
         fixable:     "auto",

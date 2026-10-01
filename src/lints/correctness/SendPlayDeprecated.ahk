@@ -9,7 +9,8 @@ class SendPlayDeprecated {
     static meta => {
         id:          "sendplay-deprecated",
         title:       "SendPlay is Deprecated",
-        category:    "hotkeys",
+        category:    "correctness",
+        tags:        ["hotkeys"],
         versions:    ">=2.0",
         severity:    "error",
         fixable:     "none",

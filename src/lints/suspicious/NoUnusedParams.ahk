@@ -6,7 +6,7 @@ class NoUnusedParams {
     static meta => {
         id:          "no-unused-params",
         title:       "No Unused Parameters",
-        category:    "misc",
+        category:    "suspicious",
         versions:    ">=2.0",
         severity:    "warn",
         fixable:     "none",

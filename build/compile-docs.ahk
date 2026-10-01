@@ -277,6 +277,15 @@ BuildOptionsSection(meta) {
         . "``````" "`n"
 }
 
+/** A lint's meta.tags as a comma-separated list, or "" if it has none. */
+FormatTags(meta) {
+    out := ""
+    if HasProp(meta, "tags")
+        for tag in meta.tags
+            out .= (out == "" ? "" : ", ") tag
+    return out
+}
+
 /**
  * Assemble one Hugo content page: front-matter, an H1, a one-row info table
  * from `meta`, the prose (with test markers stripped and test fences made
@@ -292,10 +301,10 @@ BuildPage(meta, prose) {
     ; Horizontal table: the header row carries the field names (no awkward empty
     ; header) and the single value row spans the page width.
     body := "# " meta.title "`n`n"
-        . "| ID | Category | Severity | Fixable | Versions | Recommended |`n"
-        . "|----|----------|----------|---------|----------|-------------|`n"
-        . Format("| ``{1}`` | {2} | {3} | {4} | ``{5}`` | {6} |`n`n",
-                meta.id, meta.category, meta.severity, meta.fixable,
+        . "| ID | Category | Tags | Severity | Fixable | Versions | Recommended |`n"
+        . "|----|----------|------|----------|---------|----------|-------------|`n"
+        . Format("| ``{1}`` | {2} | {3} | {4} | {5} | ``{6}`` | {7} |`n`n",
+                meta.id, meta.category, FormatTags(meta), meta.severity, meta.fixable,
                 meta.versions, meta.recommended ? "yes" : "no")
         . RTrim(StripTestMarkers(RewriteTestFences(meta, prose)), "`r`n") "`n"
         . BuildOptionsSection(meta)
