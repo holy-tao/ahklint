@@ -2,7 +2,6 @@
 title: Configuration
 type: docs
 weight: 1
-bookCollapseSection: true
 ---
 
 <!-- markdownlint-disable-next-line MD025 -->

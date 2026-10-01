@@ -133,7 +133,7 @@ WriteCategoryIndex(dir, category, metas) {
     (comments ltrim rtrim
         ---
         title: {1}
-        bookCollapseSection: false
+        bookCollapseSection: true
         ---
 
         # {1}   ; YAML frontmatter title doesn't work for indexes for some reason?
@@ -157,14 +157,13 @@ WriteRootIndex(contentDir, byCategory) {
     (comments ltrim rtrim
         ---
         title: Lints
-        weight: 1
-        bookCollapseSection: false
-        bookFlatSection: false
+        weight: 1000    ; sorts after the hand-written pages in the sidebar
+        bookCollapseSection: true
         ---
 
         # Lints ; YAML frontmatter title doesn't work for indexes for some reason?
 
-        Every lint included in ``ahklint``, grouped by category.\
+        Every lint included in ``ahklint``, grouped by category.
 
     )")
     for category, metas in byCategory {

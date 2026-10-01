@@ -17,8 +17,9 @@ theme   = "book"
   unsafe = true   # allow the raw <url> autolinks in generated "See also" lists
 
 [params]
-  # hugo-book builds its sidebar menu from this section (default "docs").
-  BookSection = "lints"
+  # hugo-book builds its sidebar menu from this section (default "docs"). "*" means
+  # the whole content tree, so hand-written pages sit alongside the generated lints.
+  BookSection = "*"
   BookTheme   = "auto"
   BookSearch  = true
   BookToC     = true
