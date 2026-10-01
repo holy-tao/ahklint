@@ -36,6 +36,17 @@ export class SourceText {
     ByteCount => this._buf.Size
 
     /**
+     * Whether `buffer` holds exactly the bytes this was built from.
+     * @param {Buffer} buffer the bytes to compare against
+     * @returns {Boolean}
+     */
+    Matches(buffer) {
+        size := this._buf.Size
+        return buffer.Size == size
+            && DllCall("RtlCompareMemory", "ptr", this._buf, "ptr", buffer, "uptr", size, "uptr") == size
+    }
+
+    /**
      * The whole source, decoded. Cached, since SARIF embeds it per artifact.
      * @returns {String}
      */

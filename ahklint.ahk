@@ -7,6 +7,7 @@
 #Import "./src/CLI.ahk" { ParseArgs, ShowVersion, ShowHelp }
 #Import "./src/Config.ahk" { LoadConfig }
 #Import "./src/LintSession.ahk" { LintSession }
+#Import "./src/FileWatcher.ahk" { FileWatcher }
 #Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
 #Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
 #Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red }
@@ -24,7 +25,8 @@ main()
  * Resolves the arguments, config and formatters, then hands the linting itself
  * to a LintSession.
  *
- * Exit code: 2 if any file failed to lint, 1 if any finding fired, else 0.
+ * Exit code: 2 if any file failed to lint, 1 if any finding fired, else 0. With
+ * `--watch` the process keeps running until it is interrupted.
  */
 main() {
     args := ParseArgs(A_Args)
@@ -61,8 +63,17 @@ main() {
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
     session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions)
-    session.LintAll(GetFullPathName(filepath))
+    root := GetFullPathName(filepath)
+    session.LintAll(root)
     session.Report()
+
+    if args.watch {
+        ; Static, so the watcher outlives this call
+        static watcher
+        watcher := FileWatcher(session, root, Console.Out)
+        Persistent()
+        return
+    }
 
     ExitApp(session.ExitCode)
 }

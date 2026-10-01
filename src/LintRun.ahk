@@ -34,19 +34,58 @@ export class LintRun {
         this._config := config
         this.target  := config.target
         this.results := []
+
+        ; path -> FileResult, so a relinted file replaces its result. Windows paths
+        ; are case-insensitive.
+        this._byPath := Map()
+        this._byPath.CaseSense := "Off"
     }
 
-    /** Record a file that linted successfully. Returns the new FileResult. */
-    AddFile(path, source, diagnostics, fixed := []) {
-        result := FileResult(path, source, diagnostics, , fixed)
-        this.results.Push(result)
-        return result
+    /**
+     * Record a file that linted successfully, replacing any earlier result for the
+     * same path. Returns the new FileResult.
+     */
+    AddFile(path, source, diagnostics, fixed := []) =>
+        this._Record(FileResult(path, source, diagnostics, , fixed))
+
+    /**
+     * Record a file that threw, replacing any earlier result for the same path. The
+     * run continues; the exit code reflects it.
+     */
+    AddError(path, error) => this._Record(FileResult(path, , , error))
+
+    /**
+     * @param {String} path absolute path of a file
+     * @returns {FileResult | String} the result recorded for `path`, or "" if none
+     */
+    Find(path) => this._byPath.Get(path, "")
+
+    /**
+     * Drop the result recorded for `path`, if any.
+     * @returns {Boolean} true if there was one
+     */
+    Remove(path) {
+        if !this._byPath.Has(path)
+            return false
+        this.results.RemoveAt(this._IndexOf(this._byPath.Delete(path)))
+        return true
     }
 
-    /** Record a file that threw. The run continues; the exit code reflects it. */
-    AddError(path, error) {
-        result := FileResult(path, , , error)
-        this.results.Push(result)
+    _IndexOf(result) {
+        for candidate in this.results
+            if candidate == result
+                return A_Index
+    }
+
+    _Record(result) {
+        ; A file is only linted again under --watch, a file or two at a time, so
+        ; replacing can afford to scan for the old result's slot
+        if (previous := this._byPath.Get(result.path, ""))
+            this.results[this._IndexOf(previous)] := result
+        else
+            this.results.Push(result)
+
+        this._byPath[result.path] := result
         return result
     }
 

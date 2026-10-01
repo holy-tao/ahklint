@@ -18,6 +18,14 @@ export SetEnabled(enabled) {
     global _enabled := !!enabled
 }
 
+/**
+ * Whether ANSI escape sequences should be written at all.
+ * @returns {Boolean}
+ */
+export IsEnabled() {
+    return _enabled
+}
+
 export global Red := _Colored.Bind(31)
 export global Green := _Colored.Bind(32)
 export global Yellow := _Colored.Bind(33)

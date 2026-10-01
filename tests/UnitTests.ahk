@@ -316,5 +316,31 @@ _UnitCases() {
         _Assert(fix.newText != _Text(fixed.source), "diagnostics are stale")
     }
 
+    cases["run: relinting a file replaces its result in place"] := () {
+        run := LintRun(Config.Default(_FakeRegistry(), DEFAULT_TARGET))
+        run.AddFile("C:\x\a.ahk", SourceText(_Utf8("a")), [1, 2])
+        run.AddFile("C:\x\b.ahk", SourceText(_Utf8("b")), [3])
+        replaced := run.AddFile("c:\X\A.ahk", SourceText(_Utf8("a2")), [])
+        _Assert(run.FileCount == 2, "FileCount is " run.FileCount)
+        _Assert(run.results[1] == replaced, "kept its place")
+        _Assert(run.DiagnosticCount == 1, "DiagnosticCount is " run.DiagnosticCount)
+        _Assert(run.Find("C:\x\a.ahk") == replaced, "found by path, whatever the case")
+    }
+    cases["run: a removed file leaves the run"] := () {
+        run := LintRun(Config.Default(_FakeRegistry(), DEFAULT_TARGET))
+        run.AddFile("C:\x\a.ahk", SourceText(_Utf8("a")), [1])
+        kept := run.AddError("C:\x\b.ahk", Error("boom"))
+        _Assert(run.Remove("C:\x\a.ahk"), "removed")
+        _Assert(!run.Remove("C:\x\a.ahk"), "nothing left to remove")
+        _Assert(run.FileCount == 1 && run.results[1] == kept, "only b is left")
+        _Assert(run.Find("C:\x\a.ahk") == "", "no longer found")
+    }
+    cases["source: Matches compares bytes"] := () {
+        source := SourceText(_Utf8("x := 1"))
+        _Assert(source.Matches(_Utf8("x := 1")), "same bytes")
+        _Assert(!source.Matches(_Utf8("x := 2")), "same size, different bytes")
+        _Assert(!source.Matches(_Utf8("x := 10")), "different size")
+    }
+
     return cases
 }

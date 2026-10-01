@@ -55,9 +55,104 @@ export class LintSession {
         for formatter in this._formatters
             formatter.OnFileStart(filepath)
 
+        result := this._Check(filepath, , &writeError)
+
+        for formatter in this._formatters
+            formatter.OnFile(result)
+
+        ; Set once the formatters have shown the findings: the file linted fine, it
+        ; just couldn't be written. Counted by run.ErrorCount.
+        if writeError != ""
+            result.error := writeError
+
+        return result
+    }
+
+    /**
+     * Lint a file again if it has changed since its result was recorded, without
+     * telling the formatters; see Replay. A file that has gone is dropped from the
+     * run.
+     *
+     * The comparison is against the bytes the result describes, which under `--fix`
+     * are the ones this session wrote. So the change notification for our own
+     * write is a no-op, and fixing can't feed itself.
+     *
+     * @param {String} filepath absolute path of the file to lint
+     * @returns {Boolean} true if the run changed
+     */
+    Refresh(filepath) {
+        if !FileExist(filepath)
+            return this.run.Remove(filepath)
+
+        result := this._Check(filepath, true, &writeError)
+        if result == ""
+            return false
+        if writeError != ""
+            result.error := writeError
+        return true
+    }
+
+    /**
+     * Drop the result of every file that no longer exists.
+     * @returns {Boolean} true if the run changed
+     */
+    Prune() {
+        gone := this.run.results
+            .Map(result => result.path)
+            .Filter(path => !FileExist(path))
+
+        for path in gone
+            this.run.Remove(path)
+        return gone.Length > 0
+    }
+
+    /**
+     * Show the formatters the run as it stands, as if it had just been linted.
+     * In a run of several files the clean ones are left out, so what is on screen
+     * is what needs attention.
+     */
+    Replay() {
+        quiet := this.run.FileCount > 1
+        for result in this.run.results {
+            if quiet && !result.HasError && result.diagnostics.Length == 0 && result.fixed.Length == 0
+                continue
+            for formatter in this._formatters {
+                formatter.OnFileStart(result.path)
+                formatter.OnFile(result)
+            }
+        }
+        this.Report()
+    }
+
+    /**
+     * Forget which findings were fixed, so a Replay doesn't announce fixes made
+     * for an earlier change.
+     */
+    ClearFixed() {
+        for result in this.run.results
+            result.fixed := []
+    }
+
+    /**
+     * Lint a file, fix it if asked to, and record the result on the run.
+     *
+     * @param {String} filepath absolute path of the file to lint
+     * @param {Boolean} onlyIfChanged do nothing if the file still holds the bytes
+     *        its recorded result describes
+     * @param {VarRef} writeError set to the error if the fixed file couldn't be
+     *        written, else "". The result then describes the file as it was.
+     * @returns {FileResult | String} the recorded result, or "" if unchanged
+     */
+    _Check(filepath, onlyIfChanged := false, &writeError := "") {
         writeError := "", resolved := []
         try {
             source := FileRead(filepath, "RAW")
+            if onlyIfChanged {
+                previous := this.run.Find(filepath)
+                if previous && !previous.HasError && previous.source.Matches(source)
+                    return ""
+            }
+
             diagnostics := this._Lint(source)
 
             if this._fix {
@@ -82,20 +177,10 @@ export class LintSession {
                 }
             }
 
-            result := this.run.AddFile(filepath, SourceText(source), diagnostics, resolved)
+            return this.run.AddFile(filepath, SourceText(source), diagnostics, resolved)
         } catch as e {
-            result := this.run.AddError(filepath, e)
+            return this.run.AddError(filepath, e)
         }
-
-        for formatter in this._formatters
-            formatter.OnFile(result)
-
-        ; Set once the formatters have shown the findings: the file linted fine, it
-        ; just couldn't be written. Counted by run.ErrorCount.
-        if writeError != ""
-            result.error := writeError
-
-        return result
     }
 
     /** Tell the formatters the run is complete. */

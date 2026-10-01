@@ -18,6 +18,7 @@ class CliArgs {
     sarifPath := ""
     fix := false
     applySuggestions := false
+    watch := false
 }
 
 Die(message) {
@@ -72,6 +73,7 @@ ShowHelp() {
     Opt(["-t", "--target"], "Target AutoHotkey version. Overrides the config file if present", "2.0.26")
     Opt(["-s", "--sarif"], "Path to write SARIF output to, or '-' for stdout")
     opt(["-f", "--fix"], "Apply autofixes to linted files")
+    opt(["-w", "--watch"], "Lint again whenever the file or directory changes")
     opt(["--apply-suggestions"], "Apply suggested fixes to linted files (may be incorrect)")
 
     Console.Out.WriteLine("")
@@ -120,6 +122,8 @@ ParseArgs(argv) {
                 out.sarifPath := argv[++i]
             case "--apply-suggestions":
                 out.applySuggestions := true
+            case "-w", "--watch":
+                out.watch := true
             default:
                 if SubStr(arg, 1, 1) == "-"
                     Die("unknown option: " arg)
@@ -131,6 +135,10 @@ ParseArgs(argv) {
         }
         i++
     }
+
+    ; A watch never finishes, and SARIF is one document describing a finished run
+    if out.watch && out.sarifPath != ""
+        Die("--watch cannot be combined with --sarif")
 
     return out
 }
