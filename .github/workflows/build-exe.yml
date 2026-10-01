@@ -38,7 +38,17 @@ jobs:
       - name: Setup ahkbuild
         uses: ./.github/actions/setup-ahkbuild
 
+      - run: ahkbuild run ./build/barrel.ahk
       - run: ahkbuild bundle exe
+
+      - name: Compress with UPX
+        uses: crazy-max/ghaction-upx@v4
+        with:
+          version: latest
+          files: |
+            ahklint.exe
+            bin/*.dll
+          args: --best
 
       - name: Upload exe
         uses: actions/upload-artifact@v7
