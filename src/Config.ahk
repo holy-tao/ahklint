@@ -1,6 +1,48 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
-#Import "cJson\JSON.ahk" { JSON }
+#Import "cJson/JSON" { JSON }
+
+#Import "./lints/all" { ALL_LINTS }
+#Import "./Linter" { DEFAULT_TARGET }
+#Import "./Colors" { Yellow }
+
+/**
+ * Resolve the target version and load/validate config. Target precedence:
+ * --target flag > config "target" > DEFAULT_TARGET (with a one-line notice).
+ * Config is discovered by walking up from the linted file unless --config is
+ * given. Any config error (bad JSON, unknown lint id/preset) exits 2.
+ * 
+ * @returns {Config} the loaded config
+ */
+LoadConfig(args, filepath, stderr) {
+    try {
+        configPath := args.configPath
+        if (configPath == "") {
+            SplitPath(filepath, , &fileDir)
+            configPath := Config.Discover(fileDir != "" ? fileDir : A_WorkingDir)
+        } else if !FileExist(configPath) {
+            throw ValueError("no such config file: " configPath)
+        }
+
+        parsed := configPath != "" ? Config.ParseFile(configPath) : Map()
+
+        target := args.target
+        if (target == "") {
+            if parsed.Has("target") {
+                target := parsed["target"]
+            } else {
+                target := DEFAULT_TARGET
+                stderr.WriteLine(Yellow("ahklint: ") "no target version set; assuming " DEFAULT_TARGET
+                    . ". Set --target or a `"target`" in config to silence this.")
+            }
+        }
+
+        return Config(parsed, ALL_LINTS, target)
+    } catch as e {
+        stderr.WriteLine("ahklint: " e.message)
+        ExitApp(2)
+    }
+}
 
 /**
  * Resolved linter configuration: the single source of truth for which lints run

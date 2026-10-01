@@ -7,17 +7,15 @@
 #Import "./src/CLI.ahk" { ParseArgs, ShowVersion, ShowHelp }
 #Import "./src/Linter.ahk" { Linter, DEFAULT_TARGET }
 #Import "./src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
-#Import "./src/Config.ahk" { Config }
+#Import "./src/Config.ahk" { LoadConfig }
 #Import "./src/LintRun.ahk" { LintRun }
 #Import "./src/SourceText.ahk" { SourceText }
 #Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
 #Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
-#Import "./src/lints/all.ahk" { ALL_LINTS }
 #Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red, Yellow }
 #Import "./src/Fix" { ApplyFixes }
 
 #Import "utils/Console" { Console }
-
 ;@Ahk2Exe-ConsoleApp
 
 Console.Attach()
@@ -165,40 +163,3 @@ GetFullPathName(path) {
     return StrGet(buf)
 }
 
-/**
- * Resolve the target version and load/validate config. Target precedence:
- * --target flag > config "target" > DEFAULT_TARGET (with a one-line notice).
- * Config is discovered by walking up from the linted file unless --config is
- * given. Any config error (bad JSON, unknown lint id/preset) exits 2.
- * 
- * @returns {Config} the loaded config
- */
-LoadConfig(args, filepath, stderr) {
-    try {
-        configPath := args.configPath
-        if (configPath == "") {
-            SplitPath(filepath, , &fileDir)
-            configPath := Config.Discover(fileDir != "" ? fileDir : A_WorkingDir)
-        } else if !FileExist(configPath) {
-            throw ValueError("no such config file: " configPath)
-        }
-
-        parsed := configPath != "" ? Config.ParseFile(configPath) : Map()
-
-        target := args.target
-        if (target == "") {
-            if parsed.Has("target") {
-                target := parsed["target"]
-            } else {
-                target := DEFAULT_TARGET
-                stderr.WriteLine(Yellow("ahklint: ") "no target version set; assuming " DEFAULT_TARGET
-                    . ". Set --target or a `"target`" in config to silence this.")
-            }
-        }
-
-        return Config(parsed, ALL_LINTS, target)
-    } catch as e {
-        stderr.WriteLine("ahklint: " e.message)
-        ExitApp(2)
-    }
-}
