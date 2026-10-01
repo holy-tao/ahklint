@@ -68,9 +68,9 @@ _SarifLog() {
 /** The `no-cdecl` result from _SarifLog. */
 _SarifCdeclResult() {
     for result in _SarifLog()["runs"][1]["results"]
-        if result["ruleId"] == "no-cdecl"
+        if result["ruleId"] == "cdecl"
             return result
-    throw Error("no no-cdecl result")
+    throw Error("no cdecl result")
 }
 
 /** `text` as UTF-8 bytes with no terminator, the way a file is read. */

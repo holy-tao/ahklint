@@ -18,8 +18,6 @@ to indicate that the call should use the "C" calling convention instead of [`std
 Simply omit the calling convention from your return type string
 
 ```autohotkey test
-#Requires AutoHotkey v2.1-alpha.23
-
 grammarType := DllCall("tree-sitter\ts_node_grammar_type", Node.Ptr, this, "astr")
 DllCall("ntdll\RtlCopyMemory", Point.Ptr, this, "ptr", ptrOrRow, "uint", 8, "void")
 ```
@@ -27,15 +25,11 @@ DllCall("ntdll\RtlCopyMemory", Point.Ptr, this, "ptr", ptrOrRow, "uint", 8, "voi
 Or use a struct class as the return type for automatic marshalling
 
 ``` autohotkey test
-#Requires AutoHotkey v2.1-alpha.23
-
 grammarType := DllCall("tree-sitter\ts_node_grammar_type", Node.Ptr, this, AStr.Ptr)
 ```
 
 ### Incorrect
 
 ```autohotkey test
-#Requires AutoHotkey v2.1-alpha.23
-
-grammarType := DllCall("tree-sitter\ts_node_grammar_type", Node.Ptr, this, "cdecl astr") ;~ no-cdecl
+grammarType := DllCall("tree-sitter\ts_node_grammar_type", Node.Ptr, this, "cdecl astr") ;~ cdecl
 ```

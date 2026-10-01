@@ -3,9 +3,9 @@
 #Import "../../lib/Util" { FlattenNode }
 #Import "../../Diagnostic" { Fix }
 
-class NoCdecl {
+class Cdecl {
     static meta => {
-        id:          "no-cdecl",
+        id:          "cdecl",
         title:       "Always Omit CDecl",
         category:    "complexity",
         tags:        ["ffi"],
@@ -47,7 +47,7 @@ class NoCdecl {
 
         if InStr(typeArg.Text, "cdecl") {
             replacement := StrReplace(StrReplace(typeArg.Text, "cdecl"), " ")
-            linter.Report(NoCdecl.meta, typeArg, message, [Fix.To(typeArg, replacement)])
+            linter.Report(Cdecl.meta, typeArg, message, [Fix.To(typeArg, replacement)])
         }
     }
 }
