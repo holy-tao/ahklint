@@ -24,8 +24,6 @@ particular type, not just an arbitrary pointer-sized integer.
 Use numeric types or struct classes in [`DllCall`]:
 
 ``` autohotkey test
-#Requires AutoHotkey v2.1-alpha.23
-
 DllCall("user32\GetMonitorInfo", IntPtr, hMonitor, MONITORINFO.Ptr, MI := MONITORINFO())
 ```
 
@@ -33,24 +31,26 @@ However, some identifiers (notably `astr`, `wstr`, `str`, and `hresult`) do not 
 does not warn in this case:
 
 ``` autohotkey test
-#Requires AutoHotkey v2.1-alpha.23
-
 ComCall(this, 2, Int32, num, "hresult")
 DllCall("tree-sitter\ts_node_type", Node.Ptr, this, "astr")
 ```
 
+To allow `"ptr"` to be used, typically to [allow objects to be passed][dllcall-ptr] to call, set `allowPtr` to true.
+
+```autohotkey test { "allowPtr": true }
+DllCall("user32\GetMonitorInfo", "ptr", hMonitor, "ptr", MI := MONITORINFO())
+```
+
+[dllcall-ptr]: https://www.autohotkey.com/docs/alpha/lib/DllCall.htm#Ptr
+
 ## Incorrect
 
 ```autohotkey test
-#Requires AutoHotkey v2.0
-
 DllCall("user32\GetMonitorInfo", "ptr", hMonitor, "ptr", MI := MONITORINFO()) ;~ use-type-classes 2
 ComCall(this, 2, "int", num, "hresult") ;~ use-type-classes
 ```
 
 ```autohotkey test
-#Requires AutoHotkey v2.0
-
 DllCall("Crypt32\CryptStringToBinary",
     "Str", codeB64,
     "UInt", 0,                          ;~ use-type-classes

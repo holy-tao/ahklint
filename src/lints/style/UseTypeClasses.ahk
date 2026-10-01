@@ -21,7 +21,14 @@ class UseTypeClasses {
         references:  [
             "https://www.autohotkey.com/docs/alpha/lib/DllCall.htm#types",
             "https://www.autohotkey.com/docs/alpha/lib/CallbackCreate.htm#Parameters"
-        ]
+        ],
+        options: {
+            allowPtr: {
+                type:        "boolean",
+                default:     false,
+                description: "Allow `"ptr`" as a type specifier, to keep obj.ptr resolution logic."
+            }
+        }
     }
 
     /**
@@ -33,6 +40,8 @@ class UseTypeClasses {
     DllCallTypes := Map()
 
     __New(linter) {
+        opts := linter.Options(UseTypeClasses.meta)
+
         this.DllCallTypes.CaseSense := "off"
         ; NOTE: astr / wstr / str omitted since they have no v2.1 equivalent now
         ;       hresult and void similarly have special semantics and aren't included
@@ -45,9 +54,11 @@ class UseTypeClasses {
             "Char",     "Int8",
             "UChar",    "UInt8",
             "Float",    "Float32",
-            "Double",   "Float64",
-            "Ptr",      "IntPtr"
+            "Double",   "Float64"
         )
+
+        if !opts.allowPtr
+            this.DllCallTypes["ptr"] := "IntPtr"
 
         linter.OnEnter("function_call", this.Evaluate.Bind(this))
         linter.OnEnter("call_statement", this.Evaluate.Bind(this))
