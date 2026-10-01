@@ -1,0 +1,14 @@
+root = true
+
+[*]
+end_of_line = crlf
+insert_final_newline = true
+charser = utf-8
+trim_trailing_whitespace = true
+
+[*.ahk]
+indent_style = tab
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_size = 2
