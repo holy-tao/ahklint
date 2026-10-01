@@ -17,4 +17,5 @@ the full set under **[Lints]({{< relref "/lints" >}})**.
 ## See Also
 
 - **[Configuration]({{< relref "/config" >}})**
+- **[CLI]({{< relref "/cli" >}})**
 - **[AhkLint on GitHub](https://github.com/holy-tao/ahklint)**

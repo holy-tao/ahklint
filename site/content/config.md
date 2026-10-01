@@ -1,13 +1,16 @@
 ---
 title: Configuration
 type: docs
-weight: 1
+weight: 10
 ---
 
 <!-- markdownlint-disable-next-line MD025 -->
 # Configuration
 
 AhkLint is configured with a json file named either `.ahklint.json` or `ahklint.json`.
+
+By default, this file is discovered by walking up directories from the CLI's current working directory. You can also
+specify a config file with the [`--config`]({{< relref "/cli#--config--c" >}})
 
 ## Schema
 
