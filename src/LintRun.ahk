@@ -7,12 +7,16 @@ export class FileResult {
      * @param {SourceText} source the file's bytes, or unset when it never parsed
      * @param {Array<Diagnostic>} diagnostics the findings, empty when clean
      * @param {Error} error optional - the failure that stopped this file
+     * @param {Array<Diagnostic>} fixed the findings `--fix` resolved, which are no
+     *        longer in `diagnostics`. Their spans predate the fix, so they can't be
+     *        resolved against `source`.
      */
-    __New(path, source := "", diagnostics := [], error := "") {
+    __New(path, source := "", diagnostics := [], error := "", fixed := []) {
         this.path        := path
         this.source      := source
         this.diagnostics := diagnostics
         this.error       := error
+        this.fixed       := fixed
     }
 
     HasError => this.error != ""
@@ -33,8 +37,8 @@ export class LintRun {
     }
 
     /** Record a file that linted successfully. Returns the new FileResult. */
-    AddFile(path, source, diagnostics) {
-        result := FileResult(path, source, diagnostics)
+    AddFile(path, source, diagnostics, fixed := []) {
+        result := FileResult(path, source, diagnostics, , fixed)
         this.results.Push(result)
         return result
     }
@@ -52,6 +56,16 @@ export class LintRun {
             total := 0
             for result in this.results
                 total += result.diagnostics.Length
+            return total
+        }
+    }
+
+    /** Total findings resolved by `--fix` across every file. */
+    FixedCount {
+        get {
+            total := 0
+            for result in this.results
+                total += result.fixed.Length
             return total
         }
     }

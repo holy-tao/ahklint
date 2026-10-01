@@ -54,20 +54,47 @@ export class ConsoleFormatter {
         for diag in result.diagnostics
             this._out.WriteLine(this.FormatDiagnostic(diag, result))
 
-        this._out.WriteLine(Format("{1} problem(s)", result.diagnostics.Length))
+        this._out.WriteLine(Format("{1} problem(s)", result.diagnostics.Length)
+            . this.FormatFixed(result.fixed))
     }
 
     OnFinish(run) {
         ; A single-file run already printed its count; don't repeat it.
         if (run.FileCount > 1) {
             this._out.WriteLine(Format("`n{1} problem(s) in {2} file(s)",
-                run.DiagnosticCount, run.FileCount))
+                run.DiagnosticCount, run.FileCount)
+                . (run.FixedCount > 0 ? Format(", {1} fixed", run.FixedCount) : ""))
         }
 
         ; A failed file produced no findings, so say so - otherwise a run that
         ; silently skipped half its input looks clean.
         if (run.ErrorCount > 0)
             this._out.WriteLine(Red(Format("{1} file(s) failed to lint", run.ErrorCount)))
+    }
+
+    /**
+     * The findings `--fix` resolved in one file, as a count per lint to go after
+     * the problem count: `, 3 fixed (2 quote-style, 1 concat-style)`.
+     *
+     * They aren't shown as excerpts like the remaining findings: the code they
+     * pointed at has been rewritten, so there is no line left to underline.
+     *
+     * @param {Array<Diagnostic>} fixed the resolved findings
+     * @returns {String} empty when nothing was fixed
+     */
+    FormatFixed(fixed) {
+        if fixed.Length == 0
+            return ""
+
+        counts := Map()
+        for diag in fixed
+            counts[diag.code] := counts.Get(diag.code, 0) + 1
+
+        breakdown := ""
+        for code, count in counts
+            breakdown .= (breakdown == "" ? "" : ", ") count " " Magenta(code)
+
+        return Format(", {1} fixed ({2})", fixed.Length, breakdown)
     }
 
     /**

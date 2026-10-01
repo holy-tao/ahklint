@@ -14,43 +14,79 @@ MoveMemory(source, destination, length) =>
     DllCall("RtlMoveMemory", IntPtr, destination, IntPtr, source, UInt32, length)
 
 /**
- * Collect all of the fixes in `diagnostics` which can be applied, ordered from the
- * start of the file to the end. A fix that overlaps one before it is dropped, so no
- * byte is edited twice. A later pass of FixToFixpoint picks it up once the first edit
- * is in.
+ * True if `a` belongs after `b` in a front-to-back list of patches.
+ */
+SortsAfter(a, b) =>
+    a.startByte > b.startByte || (a.startByte == b.startByte && a.endByte > b.endByte)
+
+/**
+ * Insert `patch` into `patches`, keeping it sorted front to back, unless it would
+ * overlap a patch already there.
+ *
+ * @param {Array<Fix>} patches non-overlapping patches, sorted by `startByte` ascending
+ * @param {Fix} patch the patch to insert
+ * @returns {Boolean} true if the patch was inserted
+ */
+InsertPatch(patches, patch) {
+    ; Findings arrive roughly in file order, so the slot is usually at the end
+    i := patches.Length
+    while i > 0 && SortsAfter(patches[i], patch)
+        i--
+
+    ; The list has no overlaps, so only the two neighbors can collide
+    if i > 0 && patch.startByte < patches[i].endByte
+        return false
+    if i < patches.Length && patches[i + 1].startByte < patch.endByte
+        return false
+
+    patches.InsertAt(i + 1, patch)
+    return true
+}
+
+/**
+ * Choose the fixes in `diagnostics` to apply in one pass. A finding's fix is taken
+ * whole or not at all: if any of its edits overlaps one already chosen, the finding
+ * is left for a later pass of FixToFixpoint, so no byte is edited twice and no fix
+ * is half-applied.
  *
  * @param {Array<Diagnostic>} diagnostics the findings to gather fixes for
  * @param {Boolean} includeSuggestions if true, also apply suggestions
- * @returns {Array<Fix>} non-overlapping fixes, sorted by `startByte` ascending
+ * @returns {Object} `diagnostics`, the findings whose fixes were chosen, and
+ *          `patches`, their edits, non-overlapping and sorted by `startByte` ascending
  */
-CollectPatches(diagnostics, includeSuggestions) {
-    candidates := diagnostics
-        .Filter((diag) {
-            return diag.HasFix
-                && (diag.fixable == "auto" || (includeSuggestions && diag.fixable == "suggestion"))
-        })
-        .Reduce((flat, current) {
-            flat.Push(current.fixes*)
-            return flat
-        }, [])
+SelectFixes(diagnostics, includeSuggestions) {
+    chosen := [], patches := []
 
-    ; Sort front to back, basic insertion sort. Revisit if lint counts get too high (extensions has a
-    ; quicksort implementation, but the comparison logic would be a pain to express)
-    sorted := []
-    for patch in candidates {
-        i := sorted.Length
-        while i > 0 && (sorted[i].startByte > patch.startByte
-                || (sorted[i].startByte == patch.startByte && sorted[i].endByte > patch.endByte))
-            i--
-        sorted.InsertAt(i + 1, patch)
+    for diag in diagnostics {
+        if !diag.HasFix
+            continue
+        if !(diag.fixable == "auto" || (includeSuggestions && diag.fixable == "suggestion"))
+            continue
+
+        inserted := []
+        for patch in diag.fixes {
+            if !InsertPatch(patches, patch)
+                break
+            inserted.Push(patch)
+        }
+
+        if inserted.Length == diag.fixes.Length {
+            chosen.Push(diag)
+            continue
+        }
+
+        ; Take back the edits that did fit
+        for patch in inserted {
+            for candidate in patches {
+                if candidate == patch {
+                    patches.RemoveAt(A_Index)
+                    break
+                }
+            }
+        }
     }
 
-    ; Remove overlapping patches
-    return sorted.Reduce((deconflicted, patch) {
-        if deconflicted.length <= 0 || patch.startByte >= deconflicted[-1].endByte
-            deconflicted.Push(patch)
-        return deconflicted
-    }, [])
+    return { diagnostics: chosen, patches: patches }
 }
 
 /**
@@ -72,9 +108,7 @@ Encode(text, encoding) {
 }
 
 /**
- * Apply the automatically-applyable fixes identified in `diagnostics`. This means all
- * fixes for lints whose `fixable` is `"auto"`, plus suggestions if `includeSuggestions`
- * is truthy.
+ * Apply `patches` to `src`.
  *
  * The source is never edited in place. The output is built front to back in a new
  * buffer: the untouched bytes between fixes are copied, and each fix's text is written
@@ -82,20 +116,11 @@ Encode(text, encoding) {
  *
  * TODO: Don't hardcode utf-8
  *
- * @param {Buffer} src the source code the diagnostics were found in
- * @param {Array<Diagnostic>} diagnostics the findings whose fixes to apply
- * @param {Boolean} includeSuggestions if true, also apply suggestions
- * @returns {Buffer | String} a buffer containing the patched source code, or "" if there
- *          are no fixes to apply
+ * @param {Buffer} src the source code to patch
+ * @param {Array<Fix>} patches non-overlapping edits, sorted by `startByte` ascending
+ * @returns {Buffer} a buffer containing the patched source code
  */
-export ApplyFixes(src, diagnostics, includeSuggestions := false) {
-    if diagnostics.Length == 0
-        return ""
-
-    patches := CollectPatches(diagnostics, includeSuggestions)
-    if patches.Length == 0
-        return ""
-
+ApplyPatches(src, patches) {
     encoded := patches.Map(patch => Encode(patch.newText, "UTF-8"))
 
     size := src.Size
@@ -124,27 +149,34 @@ export ApplyFixes(src, diagnostics, includeSuggestions := false) {
 
 /**
  * Apply fixes and relint until there are no more fixes to apply, or until we hit
- * MAX_FIX_PASSES passes.
+ * MAX_FIX_PASSES passes. This means all fixes for lints whose `fixable` is `"auto"`,
+ * plus suggestions if `includeSuggestions` is truthy.
  *
  * @param {Buffer} source the source code to fix
  * @param {Array<Diagnostic>} diagnostics the findings in `source`
  * @param {(Buffer) => Array<Diagnostic>} lint lints a patched buffer
  * @param {Boolean} includeSuggestions if true, also apply suggestions
- * @returns {Object} `source` and `diagnostics` after the last pass, `passes` (0 when
- *          nothing was fixed, in which case `source` is the buffer passed in), and
+ * @returns {Object} `source` and `diagnostics` after the last pass, `fixed` (the
+ *          findings whose fixes were applied; their spans point into the buffer of
+ *          the pass that found them, not into `source`), `passes` (0 when nothing
+ *          was fixed, in which case `source` is the buffer passed in), and
  *          `converged` (false when fixes were still pending at the cap)
  */
 export FixToFixpoint(source, diagnostics, lint, includeSuggestions := false) {
+    fixed := []
     passes := 0
     loop {
-        fixed := ApplyFixes(source, diagnostics, includeSuggestions)
-        if !(fixed is Buffer) || passes >= MAX_FIX_PASSES
+        selected := SelectFixes(diagnostics, includeSuggestions)
+        pending := selected.patches.Length > 0
+        if !pending || passes >= MAX_FIX_PASSES
             break
 
-        source := fixed
+        source := ApplyPatches(source, selected.patches)
+        fixed.Push(selected.diagnostics*)
         diagnostics := lint(source)
         passes++
     }
 
-    return { source: source, diagnostics: diagnostics, passes: passes, converged: !(fixed is Buffer) }
+    return { source: source, diagnostics: diagnostics, fixed: fixed, passes: passes,
+        converged: !pending }
 }

@@ -90,7 +90,7 @@ _ReplaceFirst(from, to, fixable := "auto") => (source) {
     at := InStr(_Text(source), from, true)
     if !at
         return []
-    return [{ HasFix: true, fixable: fixable,
+    return [{ code: "fake-fix", HasFix: true, fixable: fixable,
         fixes: [{ startByte: at - 1, endByte: at - 1 + StrLen(from), newText: to }] }]
 }
 
@@ -266,6 +266,7 @@ _UnitCases() {
         _Assert(fixed.passes == 3, "passes is " fixed.passes)
         _Assert(fixed.converged, "converged")
         _Assert(fixed.diagnostics.Length == 0, "nothing left to report")
+        _Assert(fixed.fixed.Length == 3, "fixed is " fixed.fixed.Length)
     }
     cases["fix: nothing to fix leaves the source alone"] := () {
         lint := _ReplaceFirst("a", "b")
@@ -273,6 +274,7 @@ _UnitCases() {
         fixed := FixToFixpoint(source, lint(source), lint)
         _Assert(fixed.source == source, "same buffer")
         _Assert(fixed.passes == 0 && fixed.converged, "no passes, converged")
+        _Assert(fixed.fixed.Length == 0, "nothing fixed")
     }
     cases["fix: suggestions are only applied on request"] := () {
         lint := _ReplaceFirst("a", "b", "suggestion")
@@ -281,6 +283,26 @@ _UnitCases() {
         _Assert(skipped.passes == 0 && skipped.diagnostics.Length == 1, "suggestion left reported")
         applied := FixToFixpoint(source, lint(source), lint, true)
         _Assert(_Text(applied.source) == "b", "suggestion applied")
+    }
+    cases["fix: a multi-edit fix is applied whole or not at all"] := () {
+        ; `wrap` wants to parenthesize "bc", but its closing edit collides with `swap`
+        swap := { code: "swap", HasFix: true, fixable: "auto",
+            fixes: [{ startByte: 1, endByte: 2, newText: "X" }] }
+        wrap := { code: "wrap", HasFix: true, fixable: "auto",
+            fixes: [{ startByte: 0, endByte: 0, newText: "(" },
+                    { startByte: 1, endByte: 3, newText: ")" }] }
+        fixed := FixToFixpoint(_Utf8("abc"), [swap, wrap], (*) => [])
+        _Assert(_Text(fixed.source) == "aXc", "source is " _Text(fixed.source))
+        _Assert(fixed.fixed.Length == 1 && fixed.fixed[1] == swap, "only swap was fixed")
+    }
+    cases["fix: edits are applied front to back whatever order they arrive in"] := () {
+        late  := { code: "late", HasFix: true, fixable: "auto",
+            fixes: [{ startByte: 2, endByte: 3, newText: "C" }] }
+        early := { code: "early", HasFix: true, fixable: "auto",
+            fixes: [{ startByte: 0, endByte: 1, newText: "AA" }] }
+        fixed := FixToFixpoint(_Utf8("abc"), [late, early], (*) => [])
+        _Assert(_Text(fixed.source) == "AAbC", "source is " _Text(fixed.source))
+        _Assert(fixed.fixed.Length == 2, "both fixed")
     }
     cases["fix: lints that undo each other stop at the cap"] := () {
         ab := _ReplaceFirst("a", "b"), ba := _ReplaceFirst("b", "a")

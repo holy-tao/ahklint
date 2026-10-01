@@ -55,7 +55,7 @@ export class LintSession {
         for formatter in this._formatters
             formatter.OnFileStart(filepath)
 
-        writeError := ""
+        writeError := "", resolved := []
         try {
             source := FileRead(filepath, "RAW")
             diagnostics := this._Lint(source)
@@ -72,6 +72,7 @@ export class LintSession {
                     try {
                         this._Write(filepath, fixed.source)
                         source := fixed.source, diagnostics := fixed.diagnostics
+                        resolved := fixed.fixed
                     }
                     catch Error as err {
                         ; The file is unchanged, so report the findings it still has
@@ -81,7 +82,7 @@ export class LintSession {
                 }
             }
 
-            result := this.run.AddFile(filepath, SourceText(source), diagnostics)
+            result := this.run.AddFile(filepath, SourceText(source), diagnostics, resolved)
         } catch as e {
             result := this.run.AddError(filepath, e)
         }
