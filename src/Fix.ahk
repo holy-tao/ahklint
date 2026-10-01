@@ -2,6 +2,10 @@
 
 #Import "extensions/ArrayExtensions"
 
+; How many times FixToFixpoint will apply fixes and relint before giving up. Only a
+; pair of lints undoing each other's fixes should ever get near it.
+MAX_FIX_PASSES := 10
+
 /**
  * Move `length` bytes from `source` to `destination`
  * @returns {void} nothing
@@ -10,16 +14,17 @@ MoveMemory(source, destination, length) =>
     DllCall("RtlMoveMemory", IntPtr, destination, IntPtr, source, UInt32, length)
 
 /**
- * Collect all of the fixes in `result` which can be applied, ordered from the start
- * of the file to the end. A fix that overlaps one before it is dropped, so no byte is
- * edited twice. A later `--fix` pass can pick it up once the first edit is in.
+ * Collect all of the fixes in `diagnostics` which can be applied, ordered from the
+ * start of the file to the end. A fix that overlaps one before it is dropped, so no
+ * byte is edited twice. A later pass of FixToFixpoint picks it up once the first edit
+ * is in.
  *
- * @param {FileResult} result the result to gather fixes for
+ * @param {Array<Diagnostic>} diagnostics the findings to gather fixes for
  * @param {Boolean} includeSuggestions if true, also apply suggestions
  * @returns {Array<Fix>} non-overlapping fixes, sorted by `startByte` ascending
  */
-CollectPatches(result, includeSuggestions) {
-    candidates := result.diagnostics
+CollectPatches(diagnostics, includeSuggestions) {
+    candidates := diagnostics
         .Filter((diag) {
             return diag.HasFix
                 && (diag.fixable == "auto" || (includeSuggestions && diag.fixable == "suggestion"))
@@ -67,8 +72,9 @@ Encode(text, encoding) {
 }
 
 /**
- * Apply the automatically-applyable fixes identified in `result`. This means all fixes
- * for lints whose `fixable` is `"auto"`.
+ * Apply the automatically-applyable fixes identified in `diagnostics`. This means all
+ * fixes for lints whose `fixable` is `"auto"`, plus suggestions if `includeSuggestions`
+ * is truthy.
  *
  * The source is never edited in place. The output is built front to back in a new
  * buffer: the untouched bytes between fixes are copied, and each fix's text is written
@@ -76,20 +82,20 @@ Encode(text, encoding) {
  *
  * TODO: Don't hardcode utf-8
  *
- * @param {FileResult} result the result to apply fixes to
+ * @param {Buffer} src the source code the diagnostics were found in
+ * @param {Array<Diagnostic>} diagnostics the findings whose fixes to apply
  * @param {Boolean} includeSuggestions if true, also apply suggestions
  * @returns {Buffer | String} a buffer containing the patched source code, or "" if there
  *          are no fixes to apply
  */
-export ApplyFixes(result, includeSuggestions := false) {
-    if result.HasError || result.diagnostics.Length == 0
+export ApplyFixes(src, diagnostics, includeSuggestions := false) {
+    if diagnostics.Length == 0
         return ""
 
-    patches := CollectPatches(result, includeSuggestions)
+    patches := CollectPatches(diagnostics, includeSuggestions)
     if patches.Length == 0
         return ""
 
-    src := result.source._buf
     encoded := patches.Map(patch => Encode(patch.newText, "UTF-8"))
 
     size := src.Size
@@ -114,4 +120,31 @@ export ApplyFixes(result, includeSuggestions := false) {
     ; Everything after the last fix
     MoveMemory(src.Ptr + readPos, fixed.Ptr + writePos, src.Size - readPos)
     return fixed
+}
+
+/**
+ * Apply fixes and relint until there are no more fixes to apply, or until we hit
+ * MAX_FIX_PASSES passes.
+ *
+ * @param {Buffer} source the source code to fix
+ * @param {Array<Diagnostic>} diagnostics the findings in `source`
+ * @param {(Buffer) => Array<Diagnostic>} lint lints a patched buffer
+ * @param {Boolean} includeSuggestions if true, also apply suggestions
+ * @returns {Object} `source` and `diagnostics` after the last pass, `passes` (0 when
+ *          nothing was fixed, in which case `source` is the buffer passed in), and
+ *          `converged` (false when fixes were still pending at the cap)
+ */
+export FixToFixpoint(source, diagnostics, lint, includeSuggestions := false) {
+    passes := 0
+    loop {
+        fixed := ApplyFixes(source, diagnostics, includeSuggestions)
+        if !(fixed is Buffer) || passes >= MAX_FIX_PASSES
+            break
+
+        source := fixed
+        diagnostics := lint(source)
+        passes++
+    }
+
+    return { source: source, diagnostics: diagnostics, passes: passes, converged: !(fixed is Buffer) }
 }

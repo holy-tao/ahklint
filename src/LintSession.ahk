@@ -4,8 +4,8 @@
 #Import "./AutoHotkeyLang" { AutoHotkeyLang }
 #Import "./LintRun" { LintRun }
 #Import "./SourceText" { SourceText }
-#Import "./Colors" { Red }
-#Import "./Fix" { ApplyFixes }
+#Import "./Colors" { Red, Yellow }
+#Import "./Fix" { FixToFixpoint }
 
 /**
  * High-level orchestrator for a lint run.
@@ -15,11 +15,15 @@ export class LintSession {
      * @param {Config} cfg the resolved config every file is linted with
      * @param {Array} formatters formatters to notify, see ConsoleFormatter
      * @param {File} stderr where to report a file that couldn't be written
+     * @param {Boolean} fix write each file's fixes back to disk as it is linted
+     * @param {Boolean} applySuggestions if true, also apply suggestions when fixing
      */
-    __New(cfg, formatters, stderr) {
+    __New(cfg, formatters, stderr, fix := false, applySuggestions := false) {
         this._cfg := cfg
         this._formatters := formatters
         this._stderr := stderr
+        this._fix := fix
+        this._applySuggestions := applySuggestions
         this.run := LintRun(cfg)
     }
 
@@ -40,7 +44,9 @@ export class LintSession {
     }
 
     /**
-     * Lint a file and record it in the lint run.
+     * Lint a file and record it in the lint run. When fixing, the file is fixed and
+     * relinted in memory until nothing more applies, then written once; the recorded
+     * result is what is left afterwards.
      *
      * @param {String} filepath absolute path of the file to lint
      * @returns {FileResult} the recorded result
@@ -49,9 +55,32 @@ export class LintSession {
         for formatter in this._formatters
             formatter.OnFileStart(filepath)
 
+        writeError := ""
         try {
             source := FileRead(filepath, "RAW")
-            diagnostics := Linter(AutoHotkeyLang(), source, this._cfg).Run()
+            diagnostics := this._Lint(source)
+
+            if this._fix {
+                fixed := FixToFixpoint(source, diagnostics, (src) => this._Lint(src),
+                    this._applySuggestions)
+                if !fixed.converged {
+                    this._stderr.WriteLine(Yellow("ahklint: ") "fixes for " filepath
+                        " did not settle after " fixed.passes " passes; some are left unapplied")
+                }
+
+                if fixed.passes > 0 {
+                    try {
+                        this._Write(filepath, fixed.source)
+                        source := fixed.source, diagnostics := fixed.diagnostics
+                    }
+                    catch Error as err {
+                        ; The file is unchanged, so report the findings it still has
+                        this._stderr.WriteLine(Red("Error writing file ") filepath ": " err.message)
+                        writeError := err
+                    }
+                }
+            }
+
             result := this.run.AddFile(filepath, SourceText(source), diagnostics)
         } catch as e {
             result := this.run.AddError(filepath, e)
@@ -59,6 +88,11 @@ export class LintSession {
 
         for formatter in this._formatters
             formatter.OnFile(result)
+
+        ; Set once the formatters have shown the findings: the file linted fine, it
+        ; just couldn't be written. Counted by run.ErrorCount.
+        if writeError != ""
+            result.error := writeError
 
         return result
     }
@@ -70,31 +104,26 @@ export class LintSession {
     }
 
     /**
-     * Write the fixes for every file in the run back to disk. A file with nothing
-     * to fix is left untouched.
-     *
-     * @param {Boolean} includeSuggestions if true, also apply suggestions
+     * @param {Buffer} source the source code to lint
+     * @returns {Array<Diagnostic>} the findings
      */
-    WriteFixes(includeSuggestions := false) {
-        for result in this.run.results {
-            fixed := ApplyFixes(result, includeSuggestions)
-            if !(fixed is Buffer)
-                continue
-            try {
-                ; The buffer already holds the file's own bytes (and BOM, if any), so
-                ; open with a RAW encoding to keep FileOpen from adding a BOM
-                f := FileOpen(result.path, "w", "UTF-8-RAW")
-                f.RawWrite(fixed)
-                f.Close()
-            }
-            catch Error as err {
-                this._stderr.WriteLine(Red("Error writing file ") result.path ": " err.message)
-                result.error := err  ; counted by run.ErrorCount
-            }
-        }
+    _Lint(source) => Linter(AutoHotkeyLang(), source, this._cfg).Run()
+
+    /**
+     * Replace the contents of `filepath` with `source`.
+     */
+    _Write(filepath, source) {
+        ; The buffer already holds the file's own bytes (and BOM, if any), so
+        ; open with a RAW encoding to keep FileOpen from adding a BOM
+        f := FileOpen(filepath, "w", "UTF-8-RAW")
+        f.RawWrite(source)
+        f.Close()
     }
 
-    /** 2 if any file failed to lint, 1 if any finding fired, else 0. */
+    /**
+     * 2 if any file failed to lint, 1 if any finding fired, else 0. A finding that
+     * was fixed is no longer on the run, so it doesn't count.
+     */
     ExitCode {
         get {
             if (this.run.ErrorCount > 0)

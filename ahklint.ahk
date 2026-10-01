@@ -60,12 +60,9 @@ main() {
     if (args.sarifPath != "")
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
-    session := LintSession(cfg, formatters, Console.Err)
+    session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions)
     session.LintAll(GetFullPathName(filepath))
     session.Report()
-
-    if args.fix
-        session.WriteFixes(args.applySuggestions)
 
     ExitApp(session.ExitCode)
 }

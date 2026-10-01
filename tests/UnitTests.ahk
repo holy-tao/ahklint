@@ -9,6 +9,7 @@
 #Import "../src/LintRun.ahk" { LintRun }
 #Import "../src/SourceText.ahk" { SourceText }
 #Import "../src/formatters/SarifFormatter.ahk" { CreateSarif }
+#Import "../src/Fix.ahk" { FixToFixpoint }
 
 ; Controlled lints so resolution is deterministic regardless of the real set.
 
@@ -70,6 +71,27 @@ _SarifCdeclResult() {
         if result["ruleId"] == "no-cdecl"
             return result
     throw Error("no no-cdecl result")
+}
+
+/** `text` as UTF-8 bytes with no terminator, the way a file is read. */
+_Utf8(text) {
+    buf := Buffer(StrPut(text, "UTF-8") - 1)
+    StrPut(text, buf, "UTF-8")
+    return buf
+}
+
+_Text(buf) => StrGet(buf, buf.Size, "UTF-8")
+
+/**
+ * A stand-in for a lint run: one finding on the first `from` in the source,
+ * whose fix replaces it with `to`.
+ */
+_ReplaceFirst(from, to, fixable := "auto") => (source) {
+    at := InStr(_Text(source), from, true)
+    if !at
+        return []
+    return [{ HasFix: true, fixable: fixable,
+        fixes: [{ startByte: at - 1, endByte: at - 1 + StrLen(from), newText: to }] }]
 }
 
 /**
@@ -234,6 +256,42 @@ _UnitCases() {
             md := rule["help"]["markdown"]
             _Assert(!InStr(md, "``````") && !InStr(md, ";~"), id ": examples leaked into help")
         }
+    }
+
+    cases["fix: repeats until nothing is left to fix"] := () {
+        lint := _ReplaceFirst("a", "b")
+        source := _Utf8("aaa")
+        fixed := FixToFixpoint(source, lint(source), lint)
+        _Assert(_Text(fixed.source) == "bbb", "source is " _Text(fixed.source))
+        _Assert(fixed.passes == 3, "passes is " fixed.passes)
+        _Assert(fixed.converged, "converged")
+        _Assert(fixed.diagnostics.Length == 0, "nothing left to report")
+    }
+    cases["fix: nothing to fix leaves the source alone"] := () {
+        lint := _ReplaceFirst("a", "b")
+        source := _Utf8("xyz")
+        fixed := FixToFixpoint(source, lint(source), lint)
+        _Assert(fixed.source == source, "same buffer")
+        _Assert(fixed.passes == 0 && fixed.converged, "no passes, converged")
+    }
+    cases["fix: suggestions are only applied on request"] := () {
+        lint := _ReplaceFirst("a", "b", "suggestion")
+        source := _Utf8("a")
+        skipped := FixToFixpoint(source, lint(source), lint)
+        _Assert(skipped.passes == 0 && skipped.diagnostics.Length == 1, "suggestion left reported")
+        applied := FixToFixpoint(source, lint(source), lint, true)
+        _Assert(_Text(applied.source) == "b", "suggestion applied")
+    }
+    cases["fix: lints that undo each other stop at the cap"] := () {
+        ab := _ReplaceFirst("a", "b"), ba := _ReplaceFirst("b", "a")
+        lint := (source) => ab(source).Length ? ab(source) : ba(source)
+        source := _Utf8("a")
+        fixed := FixToFixpoint(source, lint(source), lint)
+        _Assert(!fixed.converged, "not converged")
+        _Assert(fixed.passes == 10, "passes is " fixed.passes)
+        ; The findings must describe the source that comes back, not an earlier pass
+        fix := fixed.diagnostics[1].fixes[1]
+        _Assert(fix.newText != _Text(fixed.source), "diagnostics are stale")
     }
 
     return cases
