@@ -5,10 +5,10 @@
 /**
  * Style lint to disallow call statements and suggest standard Call()
  */
-class NoCallStatements {
+class CallStatement {
     static meta => {
-        id:          "no-call-statements",
-        title:       "No Call Statements",
+        id:          "call-statement",
+        title:       "Call Statement",
         category:    "style",
         versions:    ">=2.0",
         severity:    "warn",
@@ -30,7 +30,7 @@ class NoCallStatements {
             replacement := Format("{1}({2})", fn, args)
             msg := Format("Use standard calls instead of call statements: ``{1}``", replacement)
 
-            linter.Report(NoCallStatements.meta, node, msg, [
+            linter.Report(CallStatement.meta, node, msg, [
                 Fix(fnNode.endByte, argsNode.startByte, "("),
                 Fix.Insert(argsNode.endByte, ")")
             ])

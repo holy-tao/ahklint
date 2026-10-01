@@ -5,10 +5,10 @@
 /**
  * Prefer typed CallbackCreates, in v2.1-alpha.24+
  */
-class UseTypedCallbacks {
+class UntypedCallback {
     static meta => {
-        id:          "use-typed-callbacks",
-        title:       "Use Typed Callbacks",
+        id:          "untyped-callback",
+        title:       "Untyped Callback",
         category:    "style",
         tags:        ["ffi"],
         versions:    ">=2.1-alpha.24",
@@ -37,7 +37,7 @@ class UseTypedCallbacks {
 
         argSeq := node.GetChildByFieldName("arguments")
         if argSeq.IsNull || (argSeq.NamedChildCount < 3) {
-            linter.Report(UseTypedCallbacks.meta, node, "CallbackCreate calls must always include a ParamSpec")
+            linter.Report(UntypedCallback.meta, node, "CallbackCreate calls must always include a ParamSpec")
             return
         }
 
@@ -52,7 +52,7 @@ class UseTypedCallbacks {
         ; only typing available in v2.1
         paramSpecType := FlattenNode(argSeq.GetNamedChild(2)).Type
         if paramSpecType = "integer_literal" {
-            linter.Report(UseTypedCallbacks.meta, node, "Use typed CallbackCreate ParamSpecs")
+            linter.Report(UntypedCallback.meta, node, "Use typed CallbackCreate ParamSpecs")
         }
     }
 }

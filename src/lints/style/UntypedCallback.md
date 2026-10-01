@@ -33,7 +33,7 @@ In v2.0, `ParamSpec` could only be a number. This old style is an error:
 ```autohotkey test
 #Requires AutoHotkey v2.0
 
-callback := CallbackCreate(EnumWindowsProc, "Fast", 3) ;~ use-typed-callbacks
+callback := CallbackCreate(EnumWindowsProc, "Fast", 3) ;~ untyped-callback
 ```
 
 It is also an error to omit `ParamSpec` or `options` entirely:
@@ -41,6 +41,6 @@ It is also an error to omit `ParamSpec` or `options` entirely:
 ```autohotkey test
 #Requires AutoHotkey v2.0
 
-callback := CallbackCreate(EnumWindowsProc, "Fast") ;~ use-typed-callbacks
-callback := CallbackCreate(EnumWindowsProc) ;~ use-typed-callbacks
+callback := CallbackCreate(EnumWindowsProc, "Fast") ;~ untyped-callback
+callback := CallbackCreate(EnumWindowsProc) ;~ untyped-callback
 ```

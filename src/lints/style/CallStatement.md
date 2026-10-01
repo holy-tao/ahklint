@@ -15,5 +15,5 @@ MsgBox("Hello, World!", "My First Script")
 ### Incorrect
 
 ```autohotkey test
-MsgBox "Hello, World!", "My First Script" ;~ no-call-statements
+MsgBox "Hello, World!", "My First Script" ;~ call-statement
 ```
