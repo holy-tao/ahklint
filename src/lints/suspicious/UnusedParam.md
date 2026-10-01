@@ -56,7 +56,7 @@ MyFunc := (_) {
 ```autohotkey test
 #Requires AutoHotkey v2.0
 
-MyFunction(param) { ;~ no-unused-params
+MyFunction(param) { ;~ unused-param
     ; Doesn't use param
 }
 ```
@@ -67,7 +67,7 @@ The rule also applies to methods:
 #Requires AutoHotkey v2.0
 
 class Example {
-    static Method(unused) { ;~ no-unused-params
+    static Method(unused) { ;~ unused-param
 
     }
 }
@@ -79,7 +79,7 @@ And [fat-arrow functions](https://www.autohotkey.com/docs/alpha/Variables.htm#fa
 #Requires AutoHotkey v2.0
 
 class Example {
-    static Method(unused) => "example" ;~ no-unused-params
+    static Method(unused) => "example" ;~ unused-param
 }
 ```
 
@@ -89,7 +89,7 @@ not count for the outer function:
 ```autohotkey test
 #Requires AutoHotkey v2.0
 
-Bind(arg) { ;~ no-unused-params
+Bind(arg) { ;~ unused-param
     inner(arg) {
         DoSomething(arg)
     }
@@ -101,11 +101,11 @@ And [function definition expressions] statements in AHK [v2.1-alpha.3] and later
 ```autohotkey test
 #Requires AutoHotkey v2.1-alpha.3
 
-funcRef := Function(unused) { ;~ no-unused-params
+funcRef := Function(unused) { ;~ unused-param
 
 }
 
-funcRef := (unused) { ;~ no-unused-params
+funcRef := (unused) { ;~ unused-param
 
 }
 ```

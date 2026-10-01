@@ -2,10 +2,10 @@
 
 #Import "../../lib/Util.ahk" { GetChildOfType }
 
-class NoUnusedParams {
+class UnusedParam {
     static meta => {
-        id:          "no-unused-params",
-        title:       "No Unused Parameters",
+        id:          "unused-param",
+        title:       "Unused Parameter",
         category:    "suspicious",
         versions:    ">=2.0",
         severity:    "warn",
@@ -18,17 +18,18 @@ class NoUnusedParams {
     frames := []
 
     __New(linter) {
-        linter.OnEnter("function_declaration", this.EnterFn.Bind(this))
-        linter.OnEnter("method_declaration", this.EnterFn.Bind(this))
-        linter.OnEnter("function_expression", this.EnterFn.Bind(this))
-        linter.OnExit("function_declaration", this.ExitFn.Bind(this))
-        linter.OnExit("method_declaration", this.ExitFn.Bind(this))
-        linter.OnExit("function_expression", this.ExitFn.Bind(this))
+        static FUNCTION_NODES := [
+            "function_declaration",
+            "method_declaration",
+            "function_expression"
+        ]
+        linter.OnEnter(FUNCTION_NODES, this.EnterFn.Bind(this))
+        linter.OnExit(FUNCTION_NODES, this.ExitFn.Bind(this))
 
         linter.OnEnter("identifier", this.SeeIdent.Bind(this))
     }
 
-    EnterFn(_, node) => this.frames.Push({ params: NoUnusedParams.CollectParams(node), used: Map() })
+    EnterFn(_, node) => this.frames.Push({ params: UnusedParam.CollectParams(node), used: Map() })
 
     /**
      * identifier callback - if the identifier is a param, increment its use count
@@ -69,7 +70,7 @@ class NoUnusedParams {
             ; Expect each identifier param to appear more than once (1 for the declaration)
             if !frame.used.Has(name) || (frame.used[name] <= 1) {
                 msg := Format("Parameter ``{1}`` is never used. If this is intentional, prefix it with an underscore: ``_{1}``", name)
-                linter.Report(NoUnusedParams.meta, paramNode, msg)
+                linter.Report(UnusedParam.meta, paramNode, msg)
             }
         }
     }
