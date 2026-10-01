@@ -10,3 +10,14 @@
 @media (prefers-color-scheme: dark) {
   @import "chroma-dark";
 }
+
+// Pin the `after` menu (hugo.toml [[menus.after]]) to the bottom of the sidebar.
+.book-menu nav {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+
+  > ul + ul {
+    margin-top: auto;
+  }
+}

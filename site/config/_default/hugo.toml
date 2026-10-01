@@ -16,6 +16,11 @@ theme   = "book"
 [markup.goldmark.renderer]
   unsafe = true   # allow the raw <url> autolinks in generated "See also" lists
 
+[[menus.after]]
+  name   = "GitHub"
+  url    = "https://github.com/holy-tao/ahklint"
+  weight = 10
+
 [params]
   # hugo-book builds its sidebar menu from this section (default "docs"). "*" means
   # the whole content tree, so hand-written pages sit alongside the generated lints.
