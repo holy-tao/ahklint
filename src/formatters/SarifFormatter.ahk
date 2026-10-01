@@ -242,7 +242,7 @@ EncodeUriPath(path) {
     loop size {
         b := NumGet(buf, A_Index - 1, "UChar")
         ch := Chr(b)
-        if (b < 0x80 && RegExMatch(ch, "[A-Za-z0-9\-._~/:]"))
+        if b < 0x80 && RegExMatch(ch, "[A-Za-z0-9\-._~/:]")
             out .= ch
         else
             out .= Format("%{:02X}", b)

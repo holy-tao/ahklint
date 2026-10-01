@@ -60,7 +60,7 @@ export class ConsoleFormatter {
 
     OnFinish(run) {
         ; A single-file run already printed its count; don't repeat it.
-        if (run.FileCount > 1) {
+        if run.FileCount > 1 {
             this._out.WriteLine(Format("`n{1} problem(s) in {2} file(s)",
                 run.DiagnosticCount, run.FileCount)
                 . (run.FixedCount > 0 ? Format(", {1} fixed", run.FixedCount) : ""))
@@ -68,7 +68,7 @@ export class ConsoleFormatter {
 
         ; A failed file produced no findings, so say so - otherwise a run that
         ; silently skipped half its input looks clean.
-        if (run.ErrorCount > 0)
+        if run.ErrorCount > 0
             this._out.WriteLine(Red(Format("{1} file(s) failed to lint", run.ErrorCount)))
     }
 
@@ -92,7 +92,7 @@ export class ConsoleFormatter {
 
         breakdown := ""
         for code, count in counts
-            breakdown .= (breakdown == "" ? "" : ", ") count " " Magenta(code)
+            breakdown .= (breakdown == "" ? "" : ", ") . count " " Magenta(code)
 
         return Format(", {1} fixed ({2})", fixed.Length, breakdown)
     }
@@ -133,7 +133,7 @@ export class ConsoleFormatter {
         loop Max(0, 4 - StrLen(String(row + 1)))
             str .= " "
         str .= Gray(row + 1)
-        str .= " | " lineStart color(errPart) lineEnd "`n"
+        str .= " | " lineStart . color(errPart) . lineEnd "`n"
 
         str .= Format("     | {1}{2}{3}`n",
             this._StrRepeat(" ", startCol),
