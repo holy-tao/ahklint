@@ -5,15 +5,11 @@
 #DllLoad "./bin/tree-sitter-autohotkey.dll"
 
 #Import "./src/CLI.ahk" { ParseArgs, ShowVersion, ShowHelp }
-#Import "./src/Linter.ahk" { Linter, DEFAULT_TARGET }
-#Import "./src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
 #Import "./src/Config.ahk" { LoadConfig }
-#Import "./src/LintRun.ahk" { LintRun }
-#Import "./src/SourceText.ahk" { SourceText }
+#Import "./src/LintSession.ahk" { LintSession }
 #Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
 #Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
-#Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red, Yellow }
-#Import "./src/Fix" { ApplyFixes }
+#Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red }
 
 #Import "utils/Console" { Console }
 ;@Ahk2Exe-ConsoleApp
@@ -25,9 +21,8 @@ main()
 /**
  * CLI entry point: `ahklint [--config <path>] [--target <ver>] [--sarif <path>] <file.ahk>`
  *
- * Collects every file's findings into one LintRun and hands them to the
- * formatters. The run is built even for a single file, because a format like
- * SARIF describes the whole invocation rather than one file at a time.
+ * Resolves the arguments, config and formatters, then hands the linting itself
+ * to a LintSession.
  *
  * Exit code: 2 if any file failed to lint, 1 if any finding fired, else 0.
  */
@@ -53,7 +48,6 @@ main() {
     }
 
     cfg := LoadConfig(args, filepath, Console.Err)
-    run := LintRun(cfg)
 
     isDir := !!InStr(FileGetAttrib(filepath), "D")
 
@@ -66,69 +60,14 @@ main() {
     if (args.sarifPath != "")
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
-    if isDir {
-        ; Directory - lint all files in it and subdirectories
-        loop files GetFullPathName(filepath) "\*.ahk", "r"
-            LintFile(A_LoopFileFullPath, cfg, run, formatters)
-    }
-    else {
-        LintFile(GetFullPathName(filepath), cfg, run, formatters)
-    }
+    session := LintSession(cfg, formatters, Console.Err)
+    session.LintAll(GetFullPathName(filepath))
+    session.Report()
 
-    for formatter in formatters
-        formatter.OnFinish(run)
+    if args.fix
+        session.WriteFixes(args.applySuggestions)
 
-    if args.fix {
-        for result in run.results {
-            fixed := ApplyFixes(result, args.applySuggestions)
-            if !(fixed is Buffer)
-                continue
-            try {
-                ; The buffer already holds the file's own bytes (and BOM, if any), so
-                ; open with a RAW encoding to keep FileOpen from adding a BOM
-                f := FileOpen(result.path, "w", "UTF-8-RAW")
-                f.RawWrite(fixed)
-                f.Close()
-            }
-            catch Error as err {
-                Console.Err.WriteLine(Red("Error writing file ") result.path ": " err.message)
-                result.error := err  ; counted by run.ErrorCount
-            }
-        }
-    }
-
-    if (run.ErrorCount > 0)
-        ExitApp(2)
-    ExitApp(run.DiagnosticCount > 0 ? 1 : 0)
-}
-
-/**
- * Lint one file and record it on the run. A file that throws is recorded as an
- * error rather than aborting the walk, so one unparseable file in a directory
- * doesn't lose the results of every other file.
- *
- * @param {String} filepath path of the file to lint
- * @param {Config} cfg the resolved config
- * @param {LintRun} run the run to record the result on
- * @param {Array} formatters formatters to notify
- * @returns {FileResult} the recorded result
- */
-LintFile(filepath, cfg, run, formatters) {
-    for formatter in formatters
-        formatter.OnFileStart(filepath)
-
-    try {
-        source := FileRead(filepath, "RAW")
-        diagnostics := Linter(AutoHotkeyLang(), source, cfg).Run()
-        result := run.AddFile(filepath, SourceText(source), diagnostics)
-    } catch as e {
-        result := run.AddError(filepath, e)
-    }
-
-    for formatter in formatters
-        formatter.OnFile(result)
-
-    return result
+    ExitApp(session.ExitCode)
 }
 
 /**
