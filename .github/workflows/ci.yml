@@ -25,12 +25,13 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up editorconfig-checker
-        uses: editorconfig-checker/action-editorconfig-checker@v1.0.0
+        uses: editorconfig-checker/action-editorconfig-checker@main
 
       - name: Run editorconfig-checker
         run: editorconfig-checker
 
   build-dlls:
+    needs: [markdownlint, editorconfig] # future: ahklint itself
     uses: ./.github/workflows/build-dlls.yml
 
   test:
