@@ -1,4 +1,4 @@
-#Requires AutoHotkey v2.1-alpha.30 
+#Requires AutoHotkey v2.1-alpha.30
 
 #Import "../../lib/Util.ahk" { GetChildOfType }
 
@@ -32,10 +32,10 @@ class NoUnusedParams {
 
     /**
      * identifier callback - if the identifier is a param, increment its use count
-     * @param node 
+     * @param node
      */
     SeeIdent(_, node) {
-        if this.frames.Length <= 0 
+        if this.frames.Length <= 0
             return
 
         nodeText := node.Text   ; node.Text is a DllCall behind the scenes, cache the response
@@ -65,7 +65,7 @@ class NoUnusedParams {
         for name, paramNode in frame.params {
             if InStr(name, "_") == 1
                 continue
-            
+
             ; Expect each identifier param to appear more than once (1 for the declaration)
             if !frame.used.Has(name) || (frame.used[name] <= 1) {
                 msg := Format("Parameter ``{1}`` is never used. If this is intentional, prefix it with an underscore: ``_{1}``", name)
@@ -76,9 +76,9 @@ class NoUnusedParams {
 
     /**
      * Given a function_declaration node, collects all parameters into a map of names to node objects
-     * 
+     *
      * @param {Node} node the node
-     * @returns {Map<String, Node>} map of node names to nodes for params 
+     * @returns {Map<String, Node>} map of node names to nodes for params
      */
     static CollectParams(node) {
         params := Map()

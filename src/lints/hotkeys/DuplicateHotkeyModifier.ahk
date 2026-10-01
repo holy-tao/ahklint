@@ -36,7 +36,7 @@ class DuplicateHotkeyModifier {
 
         if hasDuplicates {
             linter.Report(DuplicateHotkeyModifier.meta, trigger, "Hotkey trigger contains duplicate modifiers.")
-        }        
+        }
     }
 
     SeeHotstring(linter, node) {

@@ -145,7 +145,7 @@ class InvalidPropertyDescriptor {
                 if InvalidPropertyDescriptor.IsNegativeNumber(value)
                     return Format("``Pack`` must be 0, 1, 2, 4 or 8, not {1}.", value.Text)
         }
-        return ""        
+        return ""
     }
 
     /** A message if a literal Offset value is invalid, else "". A string names another property. */

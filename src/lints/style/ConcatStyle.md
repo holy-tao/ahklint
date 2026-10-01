@@ -55,7 +55,7 @@ Explicit concatenation is allowed even if `style` is `implicit` if it is require
 [continuation][line continuation rules].
 
 ```autohotkey test { "style": "implicit" }
-greeting := "Hello, " 
+greeting := "Hello, "
     . name "!"
 ```
 

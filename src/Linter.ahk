@@ -29,7 +29,7 @@ export class Linter extends Visitor {
      * Ignore directives in this linter's source, mapped from line number
      * to an array of the ignored lints' ids
      * TODO: introduce a meta-lint for unused ignore directives
-     * 
+     *
      * @type {Map<Integer, Array<String>>}
      */
     ignores := Map()
@@ -59,8 +59,8 @@ export class Linter extends Visitor {
             meta := cls.meta
             ; undocumented config option to run everything
             if !A_IsCompiled && !HasProp(this._config, "UNIT_TEST_RUN") {
-               if !VerCompare(this._config.target, meta.versions)
-                   continue
+                if !VerCompare(this._config.target, meta.versions)
+                    continue
             }
 
             if this._config.SeverityFor(meta.id) != "off"
@@ -82,7 +82,7 @@ export class Linter extends Visitor {
             name := node.GetChildByFieldName("directive").text
             if InStr(name, "ahklint") != 1
                 continue ; not our directive
-            
+
             ignoredIds := StrSplit(node.GetChildByFieldName("arguments").text, " ", " `r`n`t")
                 .Filter(str => str)
 
@@ -103,8 +103,8 @@ export class Linter extends Visitor {
 
     /**
      * Whether this lint is ignored
-     * @param {Object} meta the reporting lint's static meta 
-     * @param {Node} node tree-sitter node that was linted 
+     * @param {Object} meta the reporting lint's static meta
+     * @param {Node} node tree-sitter node that was linted
      * @returns {Integer} 1 if the lint is ignored, 0 if not
      */
     IsIgnored(meta, node) {

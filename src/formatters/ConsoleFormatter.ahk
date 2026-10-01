@@ -18,7 +18,7 @@
  * it goes rather than going silent until the end. Formats that must emit one
  * document buffer everything on the LintRun instead, which is why the run keeps
  * every result rather than a running count.
- */ 
+ */
 
 /**
  * Human-readable console output.

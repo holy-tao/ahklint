@@ -102,7 +102,7 @@ class UseTypeClasses {
 
         last := SubStr(nodeText, -1, 1)
         isPtr := last == "*" || last == "p"
-        
+
         if isPtr {
             ; If a pointer-to-primitive type ("ptr*", "uintp"), strip the last character
             nodeText := Trim(SubStr(nodeText, 1, -1))
@@ -116,7 +116,7 @@ class UseTypeClasses {
 
             if nodeText = "ptr"
                 msg .= ". If this is a pointer to a struct, use ``StructClass.Ptr``."
-            
+
             linter.Report(UseTypeClasses.meta, argNode, msg, [Fix.To(argNode, structClass)])
         }
     }

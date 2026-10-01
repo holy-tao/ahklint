@@ -25,7 +25,7 @@ class UnnecessaryCallCall {
             member := callee.GetChildByFieldName("member")
             if Trim(member.text) = "call" {
                 argsNode := node.GetChildByFieldName("arguments")
-                patch := Fix.To(node, Format("{1}({2})", 
+                patch := Fix.To(node, Format("{1}({2})",
                     callee.GetChildByFieldName("object").text,
                     argsNode.IsNull ? "" : argsNode.text))
 

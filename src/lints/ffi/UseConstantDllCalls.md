@@ -27,7 +27,7 @@ addr := DllCall("GetModuleHandle", "Str", "kernel32", "Ptr")
 ```autohotkey test
 #Requires AutoHotkey v2.1-alpha
 
-A_PtrSize == 64 
+A_PtrSize == 64
    ? DllCall("RtlCopyMemory", IntPtr, dest, IntPtr, source, UInt32, length, "void")
    : DllCall("RtlMoveMemory", IntPtr, dest, IntPtr, source, UInt32, length, "void")
 ```

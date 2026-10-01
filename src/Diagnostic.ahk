@@ -59,18 +59,18 @@ class Fix {
     /**
      * Construct a fix that replaces the given tree-sitter node with the given text.
      * Use the standard constructor if the byte range to be replaced spans multiple nodes.
-     * 
-     * @param {Node} node tree-sitter node to be replaced 
+     *
+     * @param {Node} node tree-sitter node to be replaced
      * @param {String} newText the replacement text
-     * @returns {Fix} the new fix 
+     * @returns {Fix} the new fix
      */
     static To(node, newText) => Fix(node.StartByte, node.EndByte, newText)
 
     /**
      * Construct a fix that inserts some text at the given byte offset.
-     * 
-     * @param {Integer} byte the byte at which to instert the new text 
-     * @param {String} newText the text to insert 
+     *
+     * @param {Integer} byte the byte at which to instert the new text
+     * @param {String} newText the text to insert
      * @returns {Fix} the new fix object
      */
     static Insert(byte, newText) => Fix(byte, byte, newText)

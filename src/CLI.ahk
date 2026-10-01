@@ -46,7 +46,7 @@ ShowHelp() {
 
     Opt(flags, desc, default := "") {
         str := "  " StrJoin(", ", flags.Map(f => Cyan(f))*)
-    
+
         padding := LEFT_COLUMN_WIDTH - (flags.SumBy(StrLen) + (2 * (flags.Length - 1)))
         if padding < 0 {
             str .= "`n"
@@ -89,8 +89,8 @@ ShowVersion() {
 
 /**
  * Parse CLI arguments into an output object
- * 
- * @param {Array<String>} argv the arguments to parse 
+ *
+ * @param {Array<String>} argv the arguments to parse
  * @returns {CliArgs} the parsed arguments
  */
 ParseArgs(argv) {

@@ -26,13 +26,13 @@ class InterruptabilityChange {
         if node.GetChildByFieldName("function").Text != "Thread" {
             return
         }
-        
+
         if !(subFunction := GetArg(node, 0))
             return
 
         subFunction := FlattenNode(subFunction)
         if (subFunction.Type == "string_literal") && InStr(subFunction.Text, "interrupt") {
-            linter.Report(InterruptabilityChange.meta, node, 
+            linter.Report(InterruptabilityChange.meta, node,
                 "Most scripts perform more consistently with default thread interrupt settings.")
         }
     }

@@ -49,7 +49,7 @@ class QuoteStyle {
 
         unquoted := SubStr(text, 2, -1)
         if this.avoidEscape && node.type == "string_literal" ; continuation strings don't need quotes to be escaped
-            && QuoteStyle.HasUnescaped(unquoted, this.quote) 
+            && QuoteStyle.HasUnescaped(unquoted, this.quote)
         {
             return
         }

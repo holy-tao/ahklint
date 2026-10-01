@@ -35,7 +35,7 @@ class SendPlayDeprecated {
                 linter.Report(SendPlayDeprecated.meta, fn, SendPlayDeprecated.MESSAGE)
                 return
             }
-            
+
             ; Check for SendMode("Play") or its call statement equivalent
             if fn.text = "SendMode" {
                 argSeq := node.GetChildByFieldName("arguments")

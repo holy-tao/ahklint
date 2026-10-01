@@ -33,10 +33,10 @@ class ControlFlowParentheses {
     /**
      * Construct the user-facing message for a lint violation
      * @param {string} replacement the replacement text for the fix
-     * @returns {String} 
+     * @returns {String}
      */
-    Message(replacement) => 
-        Format("Control flow statements should {1} parentheses: ``{2}``", 
+    Message(replacement) =>
+        Format("Control flow statements should {1} parentheses: ``{2}``",
             this.style = "required" ? "use" : "not use", replacement)
 
     __New(linter) {

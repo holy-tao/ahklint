@@ -51,7 +51,7 @@ ComCall(this, 2, "int", num, "hresult") ;~ use-type-classes
 ```autohotkey test
 #Requires AutoHotkey v2.0
 
-DllCall("Crypt32\CryptStringToBinary", 
+DllCall("Crypt32\CryptStringToBinary",
     "Str", codeB64,
     "UInt", 0,                          ;~ use-type-classes
     "UInt", 1,                          ;~ use-type-classes

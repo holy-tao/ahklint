@@ -11,7 +11,7 @@
  * --target flag > config "target" > DEFAULT_TARGET (with a one-line notice).
  * Config is discovered by walking up from the linted file unless --config is
  * given. Any config error (bad JSON, unknown lint id/preset) exits 2.
- * 
+ *
  * @returns {Config} the loaded config
  */
 LoadConfig(args, filepath, stderr) {

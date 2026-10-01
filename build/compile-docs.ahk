@@ -139,7 +139,7 @@ WriteCategoryIndex(dir, category, metas) {
         # {1}   ; YAML frontmatter title doesn't work for indexes for some reason?
 
         {2}
-        
+
     )", StrTitle(category), LintTableHeader())
     for meta in metas
         body .= LintTableRow(meta)
@@ -209,8 +209,8 @@ CheckOptionCoverage(meta, prose, docName) {
 
     for name, spec in meta.options.OwnProps() {
         required := HasProp(spec, "values") ? spec.values
-                  : spec.type == "boolean"  ? [!spec.default]
-                  : []
+                : spec.type == "boolean"  ? [!spec.default]
+                : []
         for val in required {
             if val = spec.default
                 continue
@@ -257,7 +257,7 @@ BuildOptionsSection(meta) {
         return ""
 
     table := "| Option | Type | Default | Description |`n"
-           . "|--------|------|---------|-------------|`n"
+        . "|--------|------|---------|-------------|`n"
     defaults := ""
     for name, spec in meta.options.OwnProps() {
         type := spec.type
@@ -272,10 +272,10 @@ BuildOptionsSection(meta) {
     }
 
     return "`n## Options`n`n" table
-         . "`nSet options with the tuple form in your config. The defaults are:`n`n"
-         . "``````json`n"
-         . Format('"{1}": ["{2}", {{3}}]', meta.id, meta.severity, " " defaults " ") "`n"
-         . "``````" "`n"
+        . "`nSet options with the tuple form in your config. The defaults are:`n`n"
+        . "``````json`n"
+        . Format('"{1}": ["{2}", {{3}}]', meta.id, meta.severity, " " defaults " ") "`n"
+        . "``````" "`n"
 }
 
 /**
@@ -293,13 +293,13 @@ BuildPage(meta, prose) {
     ; Horizontal table: the header row carries the field names (no awkward empty
     ; header) and the single value row spans the page width.
     body := "# " meta.title "`n`n"
-          . "| ID | Category | Severity | Fixable | Versions | Recommended |`n"
-          . "|----|----------|----------|---------|----------|-------------|`n"
-          . Format("| ``{1}`` | {2} | {3} | {4} | ``{5}`` | {6} |`n`n",
+        . "| ID | Category | Severity | Fixable | Versions | Recommended |`n"
+        . "|----|----------|----------|---------|----------|-------------|`n"
+        . Format("| ``{1}`` | {2} | {3} | {4} | ``{5}`` | {6} |`n`n",
                 meta.id, meta.category, meta.severity, meta.fixable,
                 meta.versions, meta.recommended ? "yes" : "no")
-          . RTrim(StripTestMarkers(RewriteTestFences(meta, prose)), "`r`n") "`n"
-          . BuildOptionsSection(meta)
+        . RTrim(StripTestMarkers(RewriteTestFences(meta, prose)), "`r`n") "`n"
+        . BuildOptionsSection(meta)
 
     if meta.references.Length {
         body .= "`n## See also`n`n"

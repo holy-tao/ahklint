@@ -25,7 +25,7 @@ class LastErrorInOSError {
             argSeq := node.GetChildByFieldName("arguments")
             if argSeq.IsNull
                 return
-            
+
             if argSeq.NamedChildCount == 1 && argSeq.GetNamedCHild(0).text = "A_LastError" {
                 linter.Report(LastErrorInOSError.meta, node,
                     "Passing A_LastError to OSError is redundant.", Fix.To(node, "OSError()"))

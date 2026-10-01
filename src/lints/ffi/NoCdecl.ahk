@@ -24,7 +24,7 @@ class NoCdecl {
 
     /**
      * Evaulate a function call or call statement to see if the rule should apply
-     * @param {Linter} linter the linter 
+     * @param {Linter} linter the linter
      * @param {Node} node the tree-sitter node to evaluate
      */
     Evaluate(linter, node) {

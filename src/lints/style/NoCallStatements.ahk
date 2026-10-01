@@ -26,7 +26,7 @@ class NoCallStatements {
             fn := Trim(fnNode.Text)
             argsNode := node.GetChildByFieldName("arguments")
             args := argsNode.IsNull ? "" : Trim(argsNode.Text)
-            
+
             replacement := Format("{1}({2})", fn, args)
             msg := Format("Use standard calls instead of call statements: ``{1}``", replacement)
 

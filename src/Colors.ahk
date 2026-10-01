@@ -12,7 +12,7 @@ _Colored(code, text) {
 
 /**
  * Enable or disable ANSI colors.
- * @param {Any} enabled whether to enable colors 
+ * @param {Any} enabled whether to enable colors
  */
 export SetEnabled(enabled) {
     global _enabled := !!enabled

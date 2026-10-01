@@ -20,8 +20,8 @@ class OneRequires {
 
     /**
      * Constructor
-     * @param {Linter} linter the linter 
-     * @returns {unset?} 
+     * @param {Linter} linter the linter
+     * @returns {unset?}
      */
     __New(linter) {
         this.count := 0

@@ -16,7 +16,7 @@ class EmptySwitchCase {
         linter.OnEnter(["case_clause", "default_clause"], (linter, node) {
             body := node.GetChildByFieldName("body")
             if body.IsNull {
-                linter.Report(EmptySwitchCase.meta, node, 
+                linter.Report(EmptySwitchCase.meta, node,
                     "Empty switch case. AHK switch cases don't fall through; a match on this case will no-op.")
             }
         })

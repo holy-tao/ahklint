@@ -7,12 +7,12 @@
  * Given a tree-sitter node, return its first named child which has more than one
  * child node or which is a leaf node. If the node itself has multiple children
  * or is a leaf, returns it unchanged.
- * 
+ *
  * You can use this fuction to drill through e.g. expression sequences with exactly
  * one expression, to go from `(("string"))` -> to a `string_literal` node.
- * 
- * @param {TreeSitter.Node} node the node 
- * @returns {TreeSitter.Node} 
+ *
+ * @param {TreeSitter.Node} node the node
+ * @returns {TreeSitter.Node}
  */
 FlattenNode(node) {
     current := node
@@ -25,7 +25,7 @@ FlattenNode(node) {
 /**
  * Find the first named child of `node` with type `type`. Throws an error
  * if no such child is found
- * @returns {Node} the found node 
+ * @returns {Node} the found node
  */
 GetChildOfType(node, type) {
     loop node.NamedChildCount {
@@ -41,7 +41,7 @@ GetChildOfType(node, type) {
 /**
  * Find the first named child of `node` with type `type`. Returns a null node if
  * no such child is found
- * @returns {Node} the found node 
+ * @returns {Node} the found node
  */
 TryGetChildOfType(parent, type) {
     loop parent.NamedChildCount {
@@ -55,9 +55,9 @@ TryGetChildOfType(parent, type) {
 
 /**
  * Get the nth argument of a function, or `unset` if it does not exist
- * @param {Node} fnNode 
- * @param {Integer} argIndex 
- * @returns {Node | Unset} 
+ * @param {Node} fnNode
+ * @param {Integer} argIndex
+ * @returns {Node | Unset}
  */
 GetArg(fnNode, argIndex) {
     ;@ahkbuild-ignorebegin
@@ -75,7 +75,7 @@ GetArg(fnNode, argIndex) {
     return arg.IsNull ? unset : arg
 }
 
-FirstNamedChildOfType(parent, type) => 
+FirstNamedChildOfType(parent, type) =>
     parent.GetNamedChildren()
     .FirstOrDefault(child => child.type == type, Node())
 
@@ -91,8 +91,8 @@ IsComment(node) {
 
 /**
  * Joins strings with `delimiter`.
- * @param {String} delimiter The delimiter 
- * @param {String} strs Zero or more strings to join with `delimiter` 
+ * @param {String} delimiter The delimiter
+ * @param {String} strs Zero or more strings to join with `delimiter`
  */
 StrJoin(delimiter, strs*) {
     outStr := ""

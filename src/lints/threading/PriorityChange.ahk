@@ -26,13 +26,13 @@ class PriorityChange {
         if node.GetChildByFieldName("function").Text != "Thread" {
             return
         }
-        
+
         if !(subFunction := GetArg(node, 0))
             return
 
         subFunction := FlattenNode(subFunction)
         if (subFunction.Type == "string_literal") && InStr(subFunction.Text, "priority") {
-            linter.Report(PriorityChange.meta, node, 
+            linter.Report(PriorityChange.meta, node,
                 "Threads starting at a lower priority are dropped, not buffered. Use ``Critical`` for uninterruptible operations.")
         }
     }

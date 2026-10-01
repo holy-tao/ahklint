@@ -9,8 +9,8 @@
 /**
  * Get all of the statements in a getter or setter block. If the getter or setter doesn't
  * have a block body (fat-arrow), returns an empty array.
- * 
- * @param {Node} node 
+ *
+ * @param {Node} node
  * @returns {Array<Node>} the statements
  */
 _Statements(node) {
@@ -31,8 +31,8 @@ _BodyOf(node) => GetChildOfType(node, "function_body").GetNamedChild(0)
 
 /**
  * Convert a throw statement from statement form to function form
- * @param {Node} stmt throw_statement to convert 
- * @returns {String} 
+ * @param {Node} stmt throw_statement to convert
+ * @returns {String}
  */
 _ThrowStmtToFn(stmt) {
     ;@ahkbuild-ignorebegin
@@ -107,7 +107,7 @@ class CollapsiblePropDecl {
      * is the returned value. A getter is collapsible if it's block-bodied and the block
      * has exactly one node, which is a return statement.
      *
-     * @param {Node} getter the getter 
+     * @param {Node} getter the getter
      * @returns {String} the text to collapse the getter to, empty if it can't collapse
      */
     CollapseGetter(getter) {
@@ -139,7 +139,7 @@ class CollapsiblePropDecl {
      * Collapse a setter to a single node. A setter is collapsible if it's block-bodied and
      * the block contains a exactly one node.
      *
-     * @param {Node} setter the setter to check 
+     * @param {Node} setter the setter to check
      * @returns {String} the text to collapse the setter to, empty if it can't collapse
      */
     CollapseSetter(setter) {

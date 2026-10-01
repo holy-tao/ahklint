@@ -37,7 +37,7 @@ class LineCommentSpacing {
                 return
 
             comment := Trim(SubStr(nodeText, 2), " `r`n`t")
-            linter.Report(LineCommentSpacing.meta, node, 
+            linter.Report(LineCommentSpacing.meta, node,
                 "Line comments should start with exactly one space", Fix.To(node, "; " comment))
         })
     }

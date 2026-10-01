@@ -20,13 +20,13 @@ stdout := FileOpen("*", "w", "UTF-8")
 junitWriter := JUnit(0)
 
 loop files "../src/lints/*.md", "fr" {
-	TestFile(A_LoopFileFullPath, junitWriter, lang)
+    TestFile(A_LoopFileFullPath, junitWriter, lang)
 }
 
 RunUnitTests(junitWriter)
 
 stdout.WriteLine(Format("`n{1} test(s): {2} passed, {3} failed",
-	junitWriter.tests.overall, junitWriter.tests.pass, junitWriter.tests.fail))
+    junitWriter.tests.overall, junitWriter.tests.pass, junitWriter.tests.fail))
 _ := stdout.Handle
 
 ; Drop the last reference so __Delete flushes junit.xml before we exit, then
@@ -53,71 +53,71 @@ StripTestMarkers(prose) => RegExReplace(prose, "m)[ \t]*;~[ \t].*$", "")
  * @param lang the tree-sitter language to lint with
  */
 TestFile(filepath, writer, lang) {
-	static FENCE_START_PAT := "i)^``````\s*autohotkey\s+test\b(?<opts>.*)$"
-	static LINT_ID_PAT     := ";~\s+(?<lint>\S+)(?:\s+(?<count>\d+))?"
+    static FENCE_START_PAT := "i)^``````\s*autohotkey\s+test\b(?<opts>.*)$"
+    static LINT_ID_PAT     := ";~\s+(?<lint>\S+)(?:\s+(?<count>\d+))?"
 
-	relPath := writer.StripPathToRelative(filepath)
-	stdout.WriteLine("Scanning " relPath " ...")
+    relPath := writer.StripPathToRelative(filepath)
+    stdout.WriteLine("Scanning " relPath " ...")
 
-	; Derive the lint id for this .md from ALL_LINTS: it's the only lint enabled
-	; while running this file's examples.
-	SplitPath(filepath, , , , &stem)
-	lintId := ""
-	for cls in ALL_LINTS {
-		if cls.Prototype.__Class == stem {
-			lintId := cls.meta.id
-			break
-		}
-	}
-	if lintId == "" {
-		Fail(writer, relPath, "lint lookup", filepath, 1,
-			"no lint class named " stem " in ALL_LINTS (rerun build/barrel.ahk?)")
-		stdout.WriteLine("  ❌ FAIL no lint class named " stem)
-		return
-	}
+    ; Derive the lint id for this .md from ALL_LINTS: it's the only lint enabled
+    ; while running this file's examples.
+    SplitPath(filepath, , , , &stem)
+    lintId := ""
+    for cls in ALL_LINTS {
+        if cls.Prototype.__Class == stem {
+            lintId := cls.meta.id
+            break
+        }
+    }
+    if lintId == "" {
+        Fail(writer, relPath, "lint lookup", filepath, 1,
+            "no lint class named " stem " in ALL_LINTS (rerun build/barrel.ahk?)")
+        stdout.WriteLine("  ❌ FAIL no lint class named " stem)
+        return
+    }
 
-	testFile := FileOpen(filepath, "r")
+    testFile := FileOpen(filepath, "r")
 
-	inCodeBlock    := false
-	acc            := ""
-	blockline      := 0   ; 1-based line within the current block (matches diag rows)
-	blockStartLine := 0   ; line of the opening fence, for annotations
-	fileLineNum    := 0
-	expectedLints  := []  ; [{ lint: String, line: Int }]
-	optsText       := ""  ; the JSON options on the current block's fence, if any
+    inCodeBlock    := false
+    acc            := ""
+    blockline      := 0   ; 1-based line within the current block (matches diag rows)
+    blockStartLine := 0   ; line of the opening fence, for annotations
+    fileLineNum    := 0
+    expectedLints  := []  ; [{ lint: String, line: Int }]
+    optsText       := ""  ; the JSON options on the current block's fence, if any
 
-	loop {
-		line := testFile.ReadLine()
-		fileLineNum++
+    loop {
+        line := testFile.ReadLine()
+        fileLineNum++
 
-		if !inCodeBlock && RegExMatch(line, FENCE_START_PAT, &fence) {
-			inCodeBlock    := true
-			blockStartLine := fileLineNum
-			optsText       := Trim(fence["opts"], " `t`r`n")
-		}
-		else if inCodeBlock {
-			if InStr(line, "``````") == 1 {
-				inCodeBlock := false
-				RunBlock(writer, lang, relPath, filepath, blockStartLine, acc, expectedLints, lintId, optsText)
+        if !inCodeBlock && RegExMatch(line, FENCE_START_PAT, &fence) {
+            inCodeBlock    := true
+            blockStartLine := fileLineNum
+            optsText       := Trim(fence["opts"], " `t`r`n")
+        }
+        else if inCodeBlock {
+            if InStr(line, "``````") == 1 {
+                inCodeBlock := false
+                RunBlock(writer, lang, relPath, filepath, blockStartLine, acc, expectedLints, lintId, optsText)
 
-				acc           := ""
-				expectedLints := []
-				blockline     := 0
-			}
-			else {
-				blockline++
-				acc .= StripTestMarkers(line) "`r`n"
-				if RegExMatch(line, LINT_ID_PAT, &match) {
-					count := match["count"] != "" ? Integer(match["count"]) : 1
-					loop count
-						expectedLints.Push({ lint: match["lint"], line: blockline })
-				}
-			}
-		}
-	}
-	until testFile.AtEOF
+                acc           := ""
+                expectedLints := []
+                blockline     := 0
+            }
+            else {
+                blockline++
+                acc .= StripTestMarkers(line) "`r`n"
+                if RegExMatch(line, LINT_ID_PAT, &match) {
+                    count := match["count"] != "" ? Integer(match["count"]) : 1
+                    loop count
+                        expectedLints.Push({ lint: match["lint"], line: blockline })
+                }
+            }
+        }
+    }
+    until testFile.AtEOF
 
-	_ := stdout.Handle	; accessing the handle flushes the write buffer
+    _ := stdout.Handle    ; accessing the handle flushes the write buffer
 }
 
 /**
@@ -125,36 +125,36 @@ TestFile(filepath, writer, lang) {
  * between the diagnostics that fired and the markers in the block.
  */
 RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints, lintId, optsText) {
-	testName := "block@line" startLine
-	t0 := A_TickCount
+    testName := "block@line" startLine
+    t0 := A_TickCount
 
-	try {
-		diagnostics := RunLints(lang, code, lintId, optsText)
-	} catch as e {
-		Fail(writer, relPath, testName, filepath, startLine,
-			"linter threw while checking block: " e.message, e.stack)
-		stdout.WriteLine(Format("  🚨 ERROR {1}: {2} ({3})", testName, e.message, e.extra))
-		stdout.WriteLine("    " StrReplace(e.Stack, "`n", "`n    "))
-		return
-	}
+    try {
+        diagnostics := RunLints(lang, code, lintId, optsText)
+    } catch as e {
+        Fail(writer, relPath, testName, filepath, startLine,
+            "linter threw while checking block: " e.message, e.stack)
+        stdout.WriteLine(Format("  🚨 ERROR {1}: {2} ({3})", testName, e.message, e.extra))
+        stdout.WriteLine("    " StrReplace(e.Stack, "`n", "`n    "))
+        return
+    }
 
-	failures := CompareDiagnostics(diagnostics, expectedLints, startLine)
-	time := (A_TickCount - t0) / 1000
+    failures := CompareDiagnostics(diagnostics, expectedLints, startLine)
+    time := (A_TickCount - t0) / 1000
 
-	if !failures.Length {
-		writer.Update(relPath, testName, true, time)
-		stdout.WriteLine(Format("  ok   {1}", testName))
-		return
-	}
+    if !failures.Length {
+        writer.Update(relPath, testName, true, time)
+        stdout.WriteLine(Format("  ok   {1}", testName))
+        return
+    }
 
-	msg := ""
-	for f in failures
-		msg .= "- " f "`n"
-	Fail(writer, relPath, testName, filepath, startLine, RTrim(msg, "`n"), "", time)
+    msg := ""
+    for f in failures
+        msg .= "- " f "`n"
+    Fail(writer, relPath, testName, filepath, startLine, RTrim(msg, "`n"), "", time)
 
-	stdout.WriteLine(Format("  ❌ FAIL {1} ({2} mismatch(es))", testName, failures.Length))
-	for f in failures
-		stdout.WriteLine("    " f)
+    stdout.WriteLine(Format("  ❌ FAIL {1} ({2} mismatch(es))", testName, failures.Length))
+    for f in failures
+        stdout.WriteLine("    " f)
 }
 
 /**
@@ -169,16 +169,16 @@ RunBlock(writer, lang, relPath, filepath, startLine, code, expectedLints, lintId
  * @param {String} optsText JSON options object for that lint, or "" for defaults
  */
 RunLints(lang, code, lintId, optsText) {
-	size := StrPut(code, "UTF-8")	; bytes including the null terminator
-	buf  := Buffer(size)
-	StrPut(code, buf, "UTF-8")
-	buf.Size -= 1					; drop the terminator from the parsed range
+    size := StrPut(code, "UTF-8")    ; bytes including the null terminator
+    buf  := Buffer(size)
+    StrPut(code, buf, "UTF-8")
+    buf.Size -= 1                    ; drop the terminator from the parsed range
 
-	lintCfg := optsText != "" ? ["warn", JSON.Parse(optsText)] : "warn"
-	cfg := Config(Map("extends", "none", "lints", Map(lintId, lintCfg)), ALL_LINTS, A_AhkVersion)
-	cfg.UNIT_TEST_RUN := true
+    lintCfg := optsText != "" ? ["warn", JSON.Parse(optsText)] : "warn"
+    cfg := Config(Map("extends", "none", "lints", Map(lintId, lintCfg)), ALL_LINTS, A_AhkVersion)
+    cfg.UNIT_TEST_RUN := true
 
-	return Linter(lang, buf, cfg).Run()
+    return Linter(lang, buf, cfg).Run()
 }
 
 /**
@@ -189,31 +189,31 @@ RunLints(lang, code, lintId, optsText) {
  * .md line numbers so failures point straight at the file.
  */
 CompareDiagnostics(diagnostics, expectedLints, startLine) {
-	failures := []
-	matched  := Map()	; index into expectedLints -> already satisfied
+    failures := []
+    matched  := Map()    ; index into expectedLints -> already satisfied
 
-	for diag in diagnostics {
-		diagLine := diag.start.row + 1
-		hit := false
-		for i, exp in expectedLints {
-			if !matched.Has(i) && exp.lint == diag.code && exp.line == diagLine {
-				matched[i] := true
-				hit := true
-				break
-			}
-		}
-		if !hit
-			failures.Push(Format('unexpected "{1}" fired (md line {2})',
-				diag.code, startLine + diagLine))
-	}
+    for diag in diagnostics {
+        diagLine := diag.start.row + 1
+        hit := false
+        for i, exp in expectedLints {
+            if !matched.Has(i) && exp.lint == diag.code && exp.line == diagLine {
+                matched[i] := true
+                hit := true
+                break
+            }
+        }
+        if !hit
+            failures.Push(Format('unexpected "{1}" fired (md line {2})',
+                diag.code, startLine + diagLine))
+    }
 
-	for i, exp in expectedLints {
-		if !matched.Has(i)
-			failures.Push(Format('expected "{1}" (md line {2}) but it did not fire',
-				exp.lint, startLine + exp.line))
-	}
+    for i, exp in expectedLints {
+        if !matched.Has(i)
+            failures.Push(Format('expected "{1}" (md line {2}) but it did not fire',
+                exp.lint, startLine + exp.line))
+    }
 
-	return failures
+    return failures
 }
 
 /**
@@ -221,9 +221,9 @@ CompareDiagnostics(diagnostics, expectedLints, startLine) {
  * so CI annotations land in the right place.
  */
 Fail(writer, category, testName, filepath, line, message, stack := "", time := 0) {
-	err := Error(message)
-	err.File  := filepath
-	err.Line  := line
-	err.Stack := stack
-	writer.Update(category, testName, err, time)
+    err := Error(message)
+    err.File  := filepath
+    err.Line  := line
+    err.Stack := stack
+    writer.Update(category, testName, err, time)
 }
