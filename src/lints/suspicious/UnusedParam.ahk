@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
 #Import "../../lib/Util.ahk" { GetChildOfType }
+#Import "../../Diagnostic" { Fix }
 
 class UnusedParam {
     static meta => {
@@ -9,7 +10,7 @@ class UnusedParam {
         category:    "suspicious",
         versions:    ">=2.0",
         severity:    "warn",
-        fixable:     "none",
+        fixable:     "suggestion",
         recommended: true,
         references:  []
     }
@@ -70,7 +71,7 @@ class UnusedParam {
             ; Expect each identifier param to appear more than once (1 for the declaration)
             if !frame.used.Has(name) || (frame.used[name] <= 1) {
                 msg := Format("Parameter ``{1}`` is never used. If this is intentional, prefix it with an underscore: ``_{1}``", name)
-                linter.Report(UnusedParam.meta, paramNode, msg)
+                linter.Report(UnusedParam.meta, paramNode, msg, Fix.To(paramNode, "_" name))
             }
         }
     }
