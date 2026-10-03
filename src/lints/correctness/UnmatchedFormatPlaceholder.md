@@ -44,3 +44,9 @@ Format("{1} {2} {1}", first, second)
 ```autohotkey test
 Format("{{}{}{}}", value)
 ```
+
+Array expansions are not linted
+
+```autohotkey test
+Format("Property descriptor mixes {1} with {2}, which are mutually exclusive.", names*)
+```

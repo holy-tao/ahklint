@@ -36,6 +36,9 @@ class UnmatchedFormatPlaceholder {
         if args[1].type != "string_literal"
             return ; not a string literal, can't reliably analyze it
 
+        if args.Last().type == "array_expansion_operation"
+            return
+
         fmtString := args.RemoveAt(1) ; args now only has the format placeholder matches
         ; Invalid placeholders are output as-is and never consume an argument; they're another lint's concern
         placeholders := CollectPlaceholders(fmtString.text).Filter(p => p.IsValid)
