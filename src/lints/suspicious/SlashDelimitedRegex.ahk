@@ -27,7 +27,7 @@ class SlashDelimitedRegex {
     }
 
     CheckString(linter, node) {
-        static PATTERN := "S)(?<!\\)\/(?<pattern>.*)(?<!\\)\/(?<modifiers>.*)?"
+        static PATTERN := "S)^(?<!\\)\/(?<pattern>.*)(?<!\\)\/(?<modifiers>.*)?$"
         if !RegExMatch(SubStr(node.text, 2, -1), PATTERN, &match := "")
             return
 
