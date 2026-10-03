@@ -1,6 +1,6 @@
 #Requires AutoHotkey v2.1-alpha.30
 
-#Import "../../lib/Util.ahk" { GetChildOfType }
+#Import "../../lib/Functions" { CollectParams, FUNCTION_NODES }
 #Import "../../Diagnostic" { Fix }
 
 class UnusedParam {
@@ -19,18 +19,13 @@ class UnusedParam {
     frames := []
 
     __New(linter) {
-        static FUNCTION_NODES := [
-            "function_declaration",
-            "method_declaration",
-            "function_expression"
-        ]
         linter.OnEnter(FUNCTION_NODES, this.EnterFn.Bind(this))
         linter.OnExit(FUNCTION_NODES, this.ExitFn.Bind(this))
 
         linter.OnEnter("identifier", this.SeeIdent.Bind(this))
     }
 
-    EnterFn(_, node) => this.frames.Push({ params: UnusedParam.CollectParams(node), used: Map() })
+    EnterFn(_, node) => this.frames.Push({ params: CollectParams(node), used: Map() })
 
     /**
      * identifier callback - if the identifier is a param, increment its use count
@@ -72,44 +67,6 @@ class UnusedParam {
             if !frame.used.Has(name) || (frame.used[name] <= 1) {
                 msg := Format("Parameter ``{1}`` is never used. If this is intentional, prefix it with an underscore: ``_{1}``", name)
                 linter.Report(UnusedParam.meta, paramNode, msg, Fix.To(paramNode, "_" name))
-            }
-        }
-    }
-
-    /**
-     * Given a function_declaration node, collects all parameters into a map of names to node objects
-     *
-     * @param {Node} node the node
-     * @returns {Map<String, Node>} map of node names to nodes for params
-     */
-    static CollectParams(node) {
-        params := Map()
-
-        try paramSeq := GetChildOfType(node.GetChildByFieldName("head"), "param_sequence")
-        if !IsSet(paramSeq) || paramSeq.IsNull {
-            return params
-        }
-
-        current := paramSeq.GetNamedChild(0)
-
-        while !current.IsNull {
-            params[ExtractName(current)] := current
-            current := current.NextNamedSibling
-        }
-
-        return params
-
-        ; Helper to extract the name of a _param node
-        ExtractName(node) {
-            switch node.Type {
-                case "identifier":
-                    return node.Text
-                case "optional_param", "default_param", "variadic_param":
-                    return node.GetChildByFieldName("name").Text
-                case "byref_param":
-                    return ExtractName(node.GetChildByFieldName("param"))
-                default:
-                    throw ValueError("Unknown node type " node.Type)
             }
         }
     }

@@ -9,6 +9,7 @@
 
 #Import "./Diagnostic.ahk" { Diagnostic }
 #Import "./Config.ahk" { Config }
+#Import "./lib/Scopes.ahk" { ScopeTracker }
 #Import "./lints/all.ahk" { ALL_LINTS }
 
 export global DEFAULT_TARGET := "2.0.26"
@@ -137,6 +138,21 @@ export class Linter extends Visitor {
      * @returns {Object} option name -> value
      */
     Options(meta) => this._config.OptionsFor(meta.id)
+
+    /**
+     * The file's variable scopes.
+     *
+     * @type {ScopeTracker}
+     */
+    scopes {
+        get {
+            if !this.HasOwnProp("_scopeTracker") {
+                this._AssertUnsealed()
+                this._scopeTracker := ScopeTracker(this)
+            }
+            return this._scopeTracker
+        }
+    }
 
     OnEnter(nodeType, callback, addRemove := 1) {
         this._AssertUnsealed()

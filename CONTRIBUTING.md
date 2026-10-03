@@ -105,6 +105,29 @@ the `meta` block and still provide it; future editor integrations should let use
   the entire call node with something like `Format("Bar({1})", fooArgs)`, but this produces a single large patch which
   may swallow fixes to `fooArgs`. Instead, just replace the name of the function, keeping the arguments intact.
 
+### Variables and scopes
+
+A lint that needs to know where a variable is assigned or read should not track that itself. Ask the linter for the
+shared `ScopeTracker` ([Scopes.ahk](src/lib/Scopes.ahk)) in the constructor and do the work in an `OnComplete`
+callback, which runs once the whole file has been walked:
+
+``` autohotkey
+__New(linter) {
+    linter.scopes.OnComplete(this.Check.Bind(this))
+}
+
+Check(linter, scopes) {
+    for scope in scopes.all {
+        for name, variable in scope.variables {
+            ; variable.kind, variable.declaration, variable.writes, variable.reads
+        }
+    }
+}
+```
+
+`scopes.ScopeOf(node)` is the scope a node is in, and `scope.Lookup(name)` is the variable a name refers to there,
+following AHK's rules for globals and for functions nested in other functions.
+
 ### Documentation and Tests
 
 Documentation and tests live beside the lint classes in `<lint-name>.md` files.

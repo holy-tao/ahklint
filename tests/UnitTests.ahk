@@ -95,6 +95,20 @@ _ReplaceFirst(from, to, fixable := "auto") => (source) {
 }
 
 /**
+ * The scopes of `code`, after a full walk. A lint that uses the tracker has to be enabled for the
+ * linter to build one.
+ *
+ * @returns {ScopeTracker}
+ */
+_Scopes(code) {
+    buf := _Utf8(code)
+    cfg := Config(Map("extends", "none", "lints", Map("unused-variable", "error")), ALL_LINTS, "2.1-alpha.30")
+    engine := Linter(AutoHotkeyLang(), buf, cfg)
+    engine.Run()
+    return engine.scopes
+}
+
+/**
  * Run every unit case, recording each into the shared JUnit writer.
  */
 RunUnitTests(writer) {
@@ -340,6 +354,96 @@ _UnitCases() {
         _Assert(source.Matches(_Utf8("x := 1")), "same bytes")
         _Assert(!source.Matches(_Utf8("x := 2")), "same size, different bytes")
         _Assert(!source.Matches(_Utf8("x := 10")), "different size")
+    }
+
+    cases["scopes: assigning makes a local, reading reaches for a global"] := () {
+        scopes := _Scopes("x := 1, y := 2`nF() {`n    x := 3`n    return y`n}`n")
+        fn := scopes.all[2]
+        _Assert(scopes.root.Lookup("x").writes.Length == 1, "the global x has one write")
+        _Assert(fn.Lookup("x").kind == "local" && fn.Lookup("x").writes.Length == 1, "F has its own x")
+        _Assert(fn.OwnerOf("y") == scopes.root, "y in F is the global")
+        _Assert(scopes.root.Lookup("y").reads.Length == 1, "the read in F is recorded on the global")
+        _Assert(scopes.root.Lookup("f").kind == "function", "names are case-insensitive")
+    }
+    cases["scopes: a global declaration redirects assignments"] := () {
+        scopes := _Scopes("F() {`n    global x, y := 1`n    x := 2`n}`nG() {`n    global`n    z := 3`n}`n")
+        _Assert(scopes.all[2].variables.Count == 0, "F owns nothing")
+        _Assert(scopes.root.Lookup("x").writes.Length == 1, "x written through the declaration")
+        _Assert(scopes.root.Lookup("y").writes.Length == 1, "y initialized by the declaration")
+        _Assert(scopes.root.Lookup("z").writes.Length == 1, "assume-global")
+    }
+    cases["scopes: a nested function shares what its outer function assigns"] := () {
+        ; `shared` is assigned by Outer after Inner is declared; `own` is only read by Outer
+        code := "Outer() {`n    Inner() {`n        shared := 1`n        own := 2`n    }`n"
+            . "    shared := 3`n    return own`n}`n"
+        scopes := _Scopes(code)
+        outer := scopes.all[2], inner := scopes.all[3]
+        _Assert(inner.OwnerOf("shared") == outer, "shared belongs to Outer")
+        _Assert(outer.Lookup("shared").writes.Length == 2, "both assignments are recorded on it")
+        _Assert(inner.OwnerOf("own") == inner, "own is local to Inner")
+        _Assert(outer.OwnerOf("own") == scopes.root, "Outer's own is a global")
+        _Assert(outer.Lookup("Inner").kind == "function", "Inner is declared in Outer")
+    }
+    cases["scopes: a method doesn't capture"] := () {
+        scopes := _Scopes("x := 1`nclass C {`n    M(p) {`n        x := 2`n        return this`n    }`n}`n")
+        method := scopes.all[2]
+        _Assert(method.OwnerOf("x") == method, "x is local to M")
+        _Assert(method.Lookup("p").kind == "param", "p is a parameter")
+        _Assert(method.Lookup("this").kind == "implicit", "this is implicit")
+        _Assert(scopes.root.Lookup("C").kind == "class", "C is declared")
+        _Assert(!scopes.root.Lookup("M"), "a method name is not a variable")
+    }
+    cases["scopes: writes without a value expression"] := () {
+        code := "a := 1`na .= 2`nb++`nF(&c)`nfor d, e in arr`n    f := obj.g`n"
+        root := _Scopes(code).root
+        _Assert(root.Lookup("a").writes.Length == 2, "a has two writes")
+        _Assert(root.Lookup("a").writes[1].value.type == "integer_literal", "a := 1 has a value")
+        _Assert(root.Lookup("a").writes[2].value == "", "a .= 2 has none")
+        _Assert(root.Lookup("a").reads.Length == 1, "a .= 2 also reads a")
+        for name in ["b", "c", "d", "e"]
+            _Assert(root.Lookup(name).writes.Length == 1 && root.Lookup(name).writes[1].value == "", name)
+        _Assert(!root.Lookup("g"), "a property name is not a variable")
+        _Assert(root.Lookup("arr").reads.Length == 1, "arr is read")
+    }
+    cases["scopes: dynamic references taint the enclosing scopes"] := () {
+        scopes := _Scopes("F() {`n    %name% := 1`n}`nG() {`n    return obj.%name%`n}`n")
+        _Assert(scopes.all[2].hasDynamicRefs && scopes.root.hasDynamicRefs, "F and the global scope")
+        _Assert(!scopes.all[3].hasDynamicRefs, "a dynamic property name is not a variable reference")
+    }
+    cases["scopes: imports are declared"] := () {
+        root := _Scopes('#Import "./a.ahk" { Foo, Bar as Baz }`n#Import "./b.ahk" as B`n#Import Mod`n').root
+        for name in ["Foo", "Baz", "B", "Mod"]
+            _Assert(root.Lookup(name) && root.Lookup(name).kind == "import", name)
+        _Assert(!root.Lookup("Bar"), "an aliased export isn't bound under its own name")
+    }
+    cases["scopes: local and static stay local in an assume-global function"] := () {
+        scopes := _Scopes("F() {`n    global`n    local a := 1`n    static b := 2`n    c := 3`n}`n")
+        fn := scopes.all[2]
+        _Assert(fn.assumeGlobal, "F is assume-global")
+        _Assert(fn.OwnerOf("a") == fn && fn.OwnerOf("b") == fn, "a and b belong to F")
+        _Assert(fn.OwnerOf("c") == scopes.root, "c is a global")
+    }
+    cases["scopes: a function nested in an assume-global one assigns globals"] := () {
+        code := "Outer() {`n    global`n    local own := 1`n    Inner() {`n        own := 2, g := 3`n    }`n}`n"
+        scopes := _Scopes(code)
+        outer := scopes.all[2], inner := scopes.all[3]
+        _Assert(inner.OwnerOf("g") == scopes.root, "g is a global")
+        _Assert(inner.OwnerOf("own") == outer, "own is Outer's local")
+    }
+    cases["scopes: a static nested function only sees static variables"] := () {
+        code := "Outer() {`n    x := 1`n    static s := 2`n    static Inner() {`n        return x + s`n    }`n"
+            . "    y := 3`n    static Assigns() {`n        y := 4`n    }`n}`n"
+        scopes := _Scopes(code)
+        outer := scopes.all[2], inner := scopes.all[3], assigns := scopes.all[4]
+        _Assert(inner.isStatic, "Inner is static")
+        _Assert(inner.OwnerOf("x") == scopes.root, "x in Inner is not Outer's")
+        _Assert(inner.OwnerOf("s") == outer, "s is Outer's static")
+        _Assert(assigns.OwnerOf("y") == assigns, "y in Assigns is its own")
+        _Assert(outer.Lookup("x").reads.Length == 0, "Outer's x is never read")
+    }
+    cases["scopes: a static function sees an assume-static function's variables"] := () {
+        scopes := _Scopes("Outer() {`n    static`n    x := 1`n    static Inner() => x`n}`n")
+        _Assert(scopes.all[3].OwnerOf("x") == scopes.all[2], "x is Outer's")
     }
 
     return cases
