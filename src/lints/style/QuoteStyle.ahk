@@ -27,8 +27,7 @@ class QuoteStyle {
             avoidEscape: {
                 type:        "boolean",
                 default:     true,
-                description: "Allow the other quote character when the string contains the "
-                    . "preferred one, so it doesn't need to be escaped."
+                description: "Allow the other quote character when the string contains the preferred one so it doesn't need to be escaped."
             }
         }
     }

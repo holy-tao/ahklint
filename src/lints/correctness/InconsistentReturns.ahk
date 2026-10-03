@@ -227,7 +227,7 @@ class InconsistentReturns {
 
         cond := node.GetChildByFieldName("condition")
         switch cond.Type {
-            case "boolean_literal": return StrLower(this.TextOf(cond)) == "true"
+            case "boolean_literal": return this.TextOf(cond) = "true"
             case "integer_literal": return Integer(this.TextOf(cond)) != 0
             default: return false
         }
@@ -266,7 +266,7 @@ class InconsistentReturns {
             text := Trim(this.TextOf(target), "`"'")
             if target.Type == "integer_literal"
                 return Integer(text) == depth + 1
-            return label != "" && StrLower(text) == StrLower(label)
+            return label != "" && text = label
         }
 
         if node.Type ~= "^(loop|while|for)_statement$" {

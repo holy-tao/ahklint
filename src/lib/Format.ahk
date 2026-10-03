@@ -18,7 +18,7 @@ class Placeholder {
      * Whether Format will substitute this placeholder. Invalid placeholders are copied into the result
      * as-is and don't consume an input value.
      */
-    IsValid => this.error == ""
+    isValid => this.error == ""
 
     /**
      * Get a string representation of the placeholder optionally normalizing it. Normalizing

@@ -91,7 +91,7 @@ class DefinePropValue {
         if !(target.Type ~= DefinePropValue.MEMBER_SAFE)
             obj := "(" obj ")"
 
-        return Fix.To(call, obj member " := " value)
+        return Fix.To(call, obj . member " := " value)
     }
 
     /** Node types that can take `.name` directly, without wrapping in parentheses */

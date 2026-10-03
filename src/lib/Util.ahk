@@ -96,9 +96,9 @@ IsComment(node) {
  */
 StrJoin(delimiter, strs*) {
     outStr := ""
-    for(str in strs) {
+    for str in strs {
         outStr .= String(str)
-        if(A_Index < strs.Length)
+        if A_Index < strs.Length
             outStr .= delimiter
     }
 
