@@ -55,7 +55,7 @@ class ConstantComparison {
 
         if l.HasProp("fn") && r.HasProp("fn") {
             message := Format("This comparison is always {1} unless neither string contains letters: ``{2}`` and "
-                . "``{3}`` never return the same letters", result, CalleeName(l.call), CalleeName(r.call))
+                "``{3}`` never return the same letters", result, CalleeName(l.call), CalleeName(r.call))
         } else {
             normalized := l.HasProp("fn") ? l : r
             literal := l.HasProp("literal") ? l : r
@@ -221,6 +221,7 @@ class ConstantComparison {
             case ">":   return a > b
             case "<=":  return a <= b
             case ">=":  return a >= b
+            default: throw ValueError("Unknown operator", , op)
         }
     }
 

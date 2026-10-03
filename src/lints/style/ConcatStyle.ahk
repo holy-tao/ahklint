@@ -25,7 +25,7 @@ class ConcatStyle {
                 type:        "boolean",
                 default:     false,
                 description: "Require explicit concatenation operators when neither operand is a string literal."
-                    . " This has no effect when style is `"explicit`"."
+                    " This has no effect when style is `"explicit`"."
             }
         }
     }

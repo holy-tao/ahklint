@@ -37,14 +37,14 @@ class UseTypeClasses {
      * v2.1 class
      * @type {Map<String, String>}
      */
-    DllCallTypes := Map()
+    dllCallTypes := Map()
 
     __New(linter) {
         opts := linter.Options(UseTypeClasses.meta)
 
         this.DllCallTypes.CaseSense := "off"
         ; NOTE: astr / wstr / str omitted since they have no v2.1 equivalent now
-        ;       hresult and void similarly have special semantics and aren't included
+        ; hresult and void similarly have special semantics and aren't included
         this.DllCallTypes.Set(
             "Int64",    "Int64",
             "Int",      "Int32",
