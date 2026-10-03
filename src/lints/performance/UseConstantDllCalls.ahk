@@ -9,7 +9,7 @@ class UseConstantDllCalls {
     static meta => {
         id:          "use-const-dllcalls",
         title:       "Use Constant DllCalls",
-        category:    "perf",
+        category:    "performance",
         tags:        ["ffi"],
         versions:    ">=2.0",
         severity:    "warn",
