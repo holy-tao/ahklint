@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 #ErrorStdOut 'UTF-8'
 
-#Include "src/ErrorHandler.ahk"
+#Import "src/ErrorHandler"
 
 #DllLoad "./bin/tree-sitter.dll"
 #DllLoad "./bin/tree-sitter-autohotkey.dll"
