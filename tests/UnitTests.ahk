@@ -90,7 +90,7 @@ _ReplaceFirst(from, to, fixable := "auto") => (source) {
     at := InStr(_Text(source), from, true)
     if !at
         return []
-    return [{ code: "fake-fix", HasFix: true, fixable: fixable,
+    return [{ code: "fake-fix", hasFix: true, fixable: fixable,
         fixes: [{ startByte: at - 1, endByte: at - 1 + StrLen(from), newText: to }] }]
 }
 
@@ -300,9 +300,9 @@ _UnitCases() {
     }
     cases["fix: a multi-edit fix is applied whole or not at all"] := () {
         ; `wrap` wants to parenthesize "bc", but its closing edit collides with `swap`
-        swap := { code: "swap", HasFix: true, fixable: "auto",
+        swap := { code: "swap", hasFix: true, fixable: "auto",
             fixes: [{ startByte: 1, endByte: 2, newText: "X" }] }
-        wrap := { code: "wrap", HasFix: true, fixable: "auto",
+        wrap := { code: "wrap", hasFix: true, fixable: "auto",
             fixes: [{ startByte: 0, endByte: 0, newText: "(" },
                     { startByte: 1, endByte: 3, newText: ")" }] }
         fixed := FixToFixpoint(_Utf8("abc"), [swap, wrap], (*) => [])
@@ -310,9 +310,9 @@ _UnitCases() {
         _Assert(fixed.fixed.Length == 1 && fixed.fixed[1] == swap, "only swap was fixed")
     }
     cases["fix: edits are applied front to back whatever order they arrive in"] := () {
-        late  := { code: "late", HasFix: true, fixable: "auto",
+        late  := { code: "late", hasFix: true, fixable: "auto",
             fixes: [{ startByte: 2, endByte: 3, newText: "C" }] }
-        early := { code: "early", HasFix: true, fixable: "auto",
+        early := { code: "early", hasFix: true, fixable: "auto",
             fixes: [{ startByte: 0, endByte: 1, newText: "AA" }] }
         fixed := FixToFixpoint(_Utf8("abc"), [late, early], (*) => [])
         _Assert(_Text(fixed.source) == "AAbC", "source is " _Text(fixed.source))

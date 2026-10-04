@@ -38,7 +38,7 @@ export class Diagnostic {
     }
 
     /** Whether this finding carries edits that would resolve it. */
-    HasFix => this.fixes.Length > 0
+    hasFix => this.fixes.Length > 0
 }
 
 /**

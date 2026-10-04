@@ -19,7 +19,7 @@ export class FileResult {
         this.fixed       := fixed
     }
 
-    HasError => this.error != ""
+    hasError => this.error != ""
 }
 
 /**
@@ -75,12 +75,13 @@ export class LintRun {
         for candidate in this.results
             if candidate == result
                 return A_Index
+        throw IndexError("No such result")
     }
 
     _Record(result) {
         ; A file is only linted again under --watch, a file or two at a time, so
         ; replacing can afford to scan for the old result's slot
-        if (previous := this._byPath.Get(result.path, ""))
+        if previous := this._byPath.Get(result.path, "")
             this.results[this._IndexOf(previous)] := result
         else
             this.results.Push(result)
@@ -90,7 +91,7 @@ export class LintRun {
     }
 
     /** Total findings across every file. */
-    DiagnosticCount {
+    diagnosticCount {
         get {
             total := 0
             for result in this.results
@@ -100,7 +101,7 @@ export class LintRun {
     }
 
     /** Total findings resolved by `--fix` across every file. */
-    FixedCount {
+    fixedCount {
         get {
             total := 0
             for result in this.results
@@ -110,7 +111,7 @@ export class LintRun {
     }
 
     /** How many files failed to lint. */
-    ErrorCount {
+    errorCount {
         get {
             total := 0
             for result in this.results
@@ -119,12 +120,12 @@ export class LintRun {
         }
     }
 
-    FileCount => this.results.Length
+    fileCount => this.results.Length
 
     /**
      * The metas of the lints that were enabled for this run - what a SARIF
      * driver lists as its rules, and what a language server announces.
      * @returns {Array<Object>}
      */
-    EnabledLints => this._config.EnabledMetas()
+    enabledLints => this._config.EnabledMetas()
 }

@@ -175,7 +175,7 @@ export class LintSession {
                     }
                     catch Error as err {
                         ; The file is unchanged, so report the findings it still has
-                        this._stderr.WriteLine(Red("Error writing file ") filepath ": " err.message)
+                        this._stderr.WriteLine(Red("Error writing file ") . filepath ": " err.message)
                         writeError := err
                     }
                 }
@@ -214,9 +214,9 @@ export class LintSession {
      * 2 if any file failed to lint, 1 if any finding fired, else 0. A finding that
      * was fixed is no longer on the run, so it doesn't count.
      */
-    ExitCode {
+    exitCode {
         get {
-            if (this.run.ErrorCount > 0)
+            if this.run.ErrorCount > 0
                 return 2
             return this.run.DiagnosticCount > 0 ? 1 : 0
         }

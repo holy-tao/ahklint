@@ -129,7 +129,8 @@ class FileSystemWatcher {
         ; Cancel the pending read and wait for the cancellation to complete before the buffer and
         ; OVERLAPPED go away, otherwise the kernel may write into freed memory
         DllCall("kernel32\CancelIoEx", IntPtr, this._hDir, IntPtr, this._overlapped.Ptr)
-        DllCall("kernel32\GetOverlappedResult", IntPtr, this._hDir, IntPtr, this._overlapped.Ptr, "uint*", &bytes := 0, Int32, true) ;@ahklint-ignore os-thread-block
+        ;@ahklint-ignore-next-line os-thread-block use-type-classes
+        DllCall("kernel32\GetOverlappedResult", IntPtr, this._hDir, IntPtr, this._overlapped.Ptr, "uint*", &bytes := 0, Int32, true)
         DllCall("kernel32\CloseHandle", IntPtr, this._hDir)
         DllCall("kernel32\CloseHandle", IntPtr, this._hEvent)
         this._hDir := this._hEvent := 0
@@ -167,7 +168,7 @@ class FileSystemWatcher {
         ok := DllCall("kernel32\GetOverlappedResult",
             IntPtr, this._hDir,
             IntPtr, this._overlapped.Ptr,
-            "uint*", &bytes := 0,
+            UInt32.Ptr, &bytes := 0,
             Int32, false,
             Int32)
 

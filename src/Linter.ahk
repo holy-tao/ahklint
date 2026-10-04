@@ -59,8 +59,7 @@ export class Linter extends Visitor {
         for cls in ALL_LINTS {
             meta := cls.meta
             ; undocumented config option to run everything
-            if !A_IsCompiled && !HasProp(this._config, "UNIT_TEST_RUN") {
-                if !VerCompare(this._config.target, meta.versions)
+            if !A_IsCompiled && !HasProp(this._config, "UNIT_TEST_RUN") && !VerCompare(this._config.target, meta.versions) {
                     continue
             }
 

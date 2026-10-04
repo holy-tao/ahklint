@@ -8,7 +8,7 @@
  */
 export struct AutoHotkeyLang extends Language {
     __New() {
-        ptr := DllCall("tree-sitter-autohotkey\tree_sitter_autohotkey", "cdecl ptr")
+        ptr := DllCall("tree-sitter-autohotkey\tree_sitter_autohotkey", IntPtr)
         super.__New(ptr)
     }
 }

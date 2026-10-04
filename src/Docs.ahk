@@ -20,5 +20,5 @@ export global DOCS_BASE := "https://holy-tao.github.io/ahklint/lints/"
  * @returns {String}
  */
 export DocsUrl(id) {
-    return DOCS_BASE id
+    return DOCS_BASE . id
 }

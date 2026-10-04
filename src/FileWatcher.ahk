@@ -66,9 +66,8 @@ export class FileWatcher {
             ; Changes were lost, so look at everything again
             this._dirty[this._root] := true
         }
-        else if this._only != "" {
-            if change.path = this._only
-                this._dirty[path] := true
+        else if this._only != "" && change.path = this._only{
+            this._dirty[path] := true
         }
         else if change.path ~= "i)\.ahk$" {
             this._dirty[path] := true

@@ -30,13 +30,13 @@ LoadConfig(args, filepath, stderr) {
         parsed := configPath != "" ? Config.ParseFile(configPath) : Map()
 
         target := args.target
-        if (target == "") {
+        if target == "" {
             if parsed.Has("target") {
                 target := parsed["target"]
             } else {
                 target := DEFAULT_TARGET
                 stderr.WriteLine(Yellow("ahklint: ") "no target version set; assuming " DEFAULT_TARGET
-                    . ". Set --target or a `"target`" in config to silence this.")
+                    ". Set --target or a `"target`" in config to silence this.")
             }
         }
 
@@ -115,7 +115,7 @@ export class Config {
     static ParseFile(path) {
         parsed := JSON.Parse(FileRead(path, "UTF-8"))
         if !(parsed is Map)
-            throw ValueError('Config root must be a JSON object: ' path, -1)
+            throw ValueError("Config root must be a JSON object: " path, -1)
         return parsed
     }
 
@@ -133,7 +133,7 @@ export class Config {
                     return candidate
             }
             SplitPath(dir, , &parent)
-            if (parent == "" || parent == dir)
+            if parent == "" || parent == dir
                 break
             dir := parent
         }
@@ -182,7 +182,7 @@ export class Config {
         }
 
         extends := parsed.Has("extends") ? parsed["extends"] : "recommended"
-        switch StrLower(extends) {
+        switch extends, "Off" {
             case "recommended":
                 for id, m in metaById
                     if m.recommended
@@ -190,11 +190,11 @@ export class Config {
             case "all":
                 for id, m in metaById
                     this._severity[id] := this._NormSeverity(m.severity, id)
-            case "none":
+            case "none": ;@ahlint-ignore empty-switch-case
                 ; start from nothing; the lints map turns rules on explicitly
             default:
                 throw ValueError('Unknown preset in "extends": "' extends '" '
-                    . '(expected "recommended", "all", or "none")', -1)
+                    '(expected "recommended", "all", or "none")', -1)
         }
 
         if !parsed.Has("lints")
@@ -214,12 +214,12 @@ export class Config {
     /** A config value is either a severity string or a `[severity, options]` tuple. */
     _SeverityFromValue(val, meta) {
         id := meta.id
-        if (val is Array) {
+        if val is Array {
             if !val.Length
                 throw ValueError('Empty config tuple for lint "' id '"', -1)
-            if (val.Length > 2)
+            if val.Length > 2
                 throw ValueError('Config tuple for lint "' id '" must be [severity, options]', -1)
-            if (val.Length == 2)
+            if val.Length == 2
                 this._ApplyOptions(val[2], meta)
             return this._NormSeverity(val[1], id)
         }
@@ -278,7 +278,7 @@ export class Config {
 
         expected := ""
         for allowed in spec.values {
-            if (allowed = val)
+            if allowed = val
                 return allowed
             expected .= (expected == "" ? "" : ", ") '"' allowed '"'
         }
@@ -289,12 +289,12 @@ export class Config {
     _NormSeverity(sev, id) {
         if !(sev is String)
             throw ValueError('Severity for lint "' id '" must be a string', -1)
-        switch StrLower(sev) {
+        switch sev, "Off" {
             case "off", "warn", "error":
                 return StrLower(sev)
             default:
                 throw ValueError('Invalid severity "' sev '" for lint "' id '" '
-                    . '(expected "off", "warn", or "error")', -1)
+                    '(expected "off", "warn", or "error")', -1)
         }
     }
 }

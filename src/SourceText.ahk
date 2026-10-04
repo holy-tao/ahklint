@@ -22,7 +22,7 @@ export class SourceText {
 
         ptr := buffer.Ptr, size := buffer.Size
         i := 0
-        while (i < size) {
+        while i < size {
             if NumGet(ptr, i, "UChar") == 0x0A
                 this._starts.Push(i + 1)
             i++
@@ -30,10 +30,10 @@ export class SourceText {
     }
 
     /** Number of lines. A trailing newline yields a final empty line. */
-    LineCount => this._starts.Length
+    lineCount => this._starts.Length
 
     /** Total size in bytes. */
-    ByteCount => this._buf.Size
+    byteCount => this._buf.Size
 
     /**
      * Whether `buffer` holds exactly the bytes this was built from.
@@ -43,14 +43,14 @@ export class SourceText {
     Matches(buffer) {
         size := this._buf.Size
         return buffer.Size == size
-            && DllCall("RtlCompareMemory", "ptr", this._buf, "ptr", buffer, "uptr", size, "uptr") == size
+            && DllCall("RtlCompareMemory", IntPtr, this._buf.ptr, IntPtr, buffer.ptr, "uptr", size, "uptr") == size
     }
 
     /**
      * The whole source, decoded. Cached, since SARIF embeds it per artifact.
      * @returns {String}
      */
-    Text {
+    text {
         get {
             if !this.HasProp("_text")
                 this._text := StrGet(this._buf.Ptr, this._buf.Size, "UTF-8")
@@ -66,16 +66,16 @@ export class SourceText {
     Line(row) {
         if this._lines.Has(row)
             return this._lines[row]
-        if (row < 0 || row >= this._starts.Length)
+        if row < 0 || row >= this._starts.Length
             return ""
 
         start := this._starts[row + 1]
         end   := (row + 2 <= this._starts.Length) ? this._starts[row + 2] : this._buf.Size
 
         ; Drop the terminator: \n, and the \r before it on CRLF input.
-        if (end > start && NumGet(this._buf.Ptr, end - 1, "UChar") == 0x0A)
+        if end > start && NumGet(this._buf.Ptr, end - 1, "UChar") == 0x0A
             end--
-        if (end > start && NumGet(this._buf.Ptr, end - 1, "UChar") == 0x0D)
+        if end > start && NumGet(this._buf.Ptr, end - 1, "UChar") == 0x0D
             end--
 
         line := (end > start) ? StrGet(this._buf.Ptr + start, end - start, "UTF-8") : ""
@@ -89,9 +89,9 @@ export class SourceText {
      */
     RowAt(byteOffset) {
         lo := 1, hi := this._starts.Length
-        while (lo < hi) {
+        while lo < hi {
             mid := (lo + hi + 1) // 2
-            if (this._starts[mid] <= byteOffset)
+            if this._starts[mid] <= byteOffset
                 lo := mid
             else
                 hi := mid - 1
@@ -106,7 +106,7 @@ export class SourceText {
     Utf16Column(byteOffset) {
         row   := this.RowAt(byteOffset)
         start := this._starts[row + 1]
-        if (byteOffset <= start)
+        if byteOffset <= start
             return 0
         return StrLen(StrGet(this._buf.Ptr + start, byteOffset - start, "UTF-8"))
     }

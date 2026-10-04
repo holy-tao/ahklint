@@ -31,7 +31,7 @@ main()
  * Exit code: 2 if any file failed to lint, 1 if any finding fired, else 0. With
  * `--watch` the process keeps running until it is interrupted.
  */
-main() {
+Main() {
     args := ParseArgs(A_Args)
     SetANSIColorsEnabled(!args.noColor)
 
@@ -44,7 +44,7 @@ main() {
     }
 
     filepath := args.file
-    if (filepath == "")
+    if filepath == ""
         filepath := A_WorkingDir
 
     if !FileExist(filepath) {
@@ -60,9 +60,9 @@ main() {
     ; `--sarif -` puts SARIF on stdout, so the console output is dropped rather
     ; than mixed into the JSON.
     formatters := []
-    if (args.sarifPath != "-")
-        formatters.Push(ConsoleFormatter(Console.Out, isDir))
-    if (args.sarifPath != "")
+    if args.sarifPath != "-"
+        formatters.Push(ConsoleFormatter(Console.Out, false))
+    if args.sarifPath != ""
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
     session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions)
@@ -72,8 +72,8 @@ main() {
 
     if args.watch {
         ; Static, so the watcher outlives this call
-        static watcher
-        watcher := FileWatcher(session, root, Console.Out)
+        static _watcher
+        _watcher := FileWatcher(session, root, Console.Out)
         Persistent()
         return
     }
@@ -90,7 +90,7 @@ main() {
  * @returns {SarifFormatter}
  */
 OpenSarifFormatter(path, stderr) {
-    if (path == "-")
+    if path == "-"
         return SarifFormatter(Console.Out)
 
     try {

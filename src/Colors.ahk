@@ -9,7 +9,7 @@ _enabled := false
 _Colored(code, text) {
     if !_enabled
         return text
-    return Console.Escape "[" String(code) "m" text Console.Escape "[0m"
+    return Console.Escape "[" String(code) "m" text . Console.Escape "[0m"
 }
 
 /**
@@ -28,10 +28,10 @@ export IsEnabled() {
     return _enabled
 }
 
-export global Red := _Colored.Bind(31)
-export global Green := _Colored.Bind(32)
-export global Yellow := _Colored.Bind(33)
-export global Blue := _Colored.Bind(34)
-export global Magenta := _Colored.Bind(35)
-export global Cyan := _Colored.Bind(36)
-export global Gray := _Colored.Bind(90)
+export global red := _Colored.Bind(31)
+export global green := _Colored.Bind(32)
+export global yellow := _Colored.Bind(33)
+export global blue := _Colored.Bind(34)
+export global magenta := _Colored.Bind(35)
+export global cyan := _Colored.Bind(36)
+export global gray := _Colored.Bind(90)
