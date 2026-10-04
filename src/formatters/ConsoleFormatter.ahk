@@ -53,9 +53,6 @@ export class ConsoleFormatter {
 
         for diag in result.diagnostics
             this._out.WriteLine(this.FormatDiagnostic(diag, result))
-
-        this._out.WriteLine(Format("{1} problem(s)", result.diagnostics.Length)
-            . this.FormatFixed(result.fixed))
     }
 
     OnFinish(run) {

@@ -54,8 +54,6 @@ Main() {
 
     cfg := LoadConfig(args, filepath, Console.Err)
 
-    isDir := !!InStr(FileGetAttrib(filepath), "D")
-
     ; The console streams as it goes; whole-run formats buffer on `run` instead.
     ; `--sarif -` puts SARIF on stdout, so the console output is dropped rather
     ; than mixed into the JSON.
