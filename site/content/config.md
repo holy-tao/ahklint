@@ -23,7 +23,9 @@ The configuration schema is similar to that of ESLint:
     "lints": {
         "no-goto":      "error",
         "one-requires": ["warn", {}]
-    }
+    },
+    "includes": ["**/*.ahk"],
+    "excludes": []
 }
 ```
 
@@ -83,6 +85,29 @@ lint pages for details.
 
 Options you leave out keep their defaults. Unknown options, values of the wrong type, and values outside an option's
 allowed set are errors.
+
+### Includes and Excludes
+
+`includes` and `excludes` define what file(s) to lint when the linter is run over a directory. Both are
+`tsconfig.json`-style glob patterns. Both keys are optional, if not set, `includes` defaults to `["**/*.ahk"]` (all
+`.ahk` files under the given directory) and nothing is excluded.
+
+For example, to lint both AutoHotkey and [KeySharp] files and exclude unit tests, your configuration might look
+something like:
+
+```json
+{
+    "includes": [
+        "**/*.ahk",
+        "**/*.ks"
+    ],
+    "excludes": ["test/"]
+}
+```
+
+`includes` and `excludes` are ignored if the linter is run over a single file.
+
+[KeySharp]: https://github.com/keysharp-org/keysharp
 
 ## Ignoring Lints in Code
 

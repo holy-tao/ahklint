@@ -40,7 +40,7 @@ _FakeRegistry() => [_FakeRecommended, _FakeOptional, _FakeNewOnly, _FakeWithOpti
 
 ; Config with the given options map on fake-options
 _OptionsConfig(opts) =>
-    Config(Map("lints", Map("fake-options", ["warn", opts])), _FakeRegistry(), "2.0")
+    Config(Map("lints", Map("fake-options", ["warn", opts])), _FakeRegistry(), "2.0", ["**/*.ahk"], [])
 
 /**
  * A SARIF log for a two-file run with every lint enabled: one file with a
@@ -57,7 +57,7 @@ _SarifLog() {
     buf := Buffer(StrPut(code, "UTF-8") - 1)
     StrPut(code, buf, "UTF-8")
 
-    cfg := Config(Map("extends", "all"), ALL_LINTS, "2.1-alpha.30")
+    cfg := Config(Map("extends", "all"), ALL_LINTS, "2.1-alpha.30", ["**/*.ahk"], [])
     run := LintRun(cfg)
     run.AddFile(root "\a.ahk", SourceText(buf), Linter(AutoHotkeyLang(), buf, cfg).Run())
     run.AddError(root "\b.ahk", Error("boom"))
@@ -102,7 +102,7 @@ _ReplaceFirst(from, to, fixable := "auto") => (source) {
  */
 _Scopes(code) {
     buf := _Utf8(code)
-    cfg := Config(Map("extends", "none", "lints", Map("unused-variable", "error")), ALL_LINTS, "2.1-alpha.30")
+    cfg := Config(Map("extends", "none", "lints", Map("unused-variable", "error")), ALL_LINTS, "2.1-alpha.30", ["**/*.ahk"], [])
     engine := Linter(AutoHotkeyLang(), buf, cfg)
     engine.Run()
     return engine.scopes
@@ -157,36 +157,36 @@ _UnitCases() {
         _Assert(!c.IsEnabled("fake-opt"),             "IsEnabled false for off")
     }
     cases["config: extends all"] := () {
-        c := Config(Map("extends", "all"), _FakeRegistry(), "2.0")
+        c := Config(Map("extends", "all"), _FakeRegistry(), "2.0", ["**/*.ahk"], [])
         _Assert(c.SeverityFor("fake-opt") == "warn", "opt enabled under all")
     }
     cases["config: extends none"] := () {
-        c := Config(Map("extends", "none"), _FakeRegistry(), "2.0")
+        c := Config(Map("extends", "none"), _FakeRegistry(), "2.0", ["**/*.ahk"], [])
         _Assert(c.SeverityFor("fake-rec") == "off", "rec off under none")
     }
 
     cases["config: enable optional via lints map"] := () {
-        c := Config(Map("lints", Map("fake-opt", "error")), _FakeRegistry(), "2.0")
+        c := Config(Map("lints", Map("fake-opt", "error")), _FakeRegistry(), "2.0", ["**/*.ahk"], [])
         _Assert(c.SeverityFor("fake-opt") == "error", "opt overridden to error")
         _Assert(c.SeverityFor("fake-rec") == "warn",  "rec still on from preset")
     }
     cases["config: disable recommended via lints map"] := () {
-        c := Config(Map("lints", Map("fake-rec", "off")), _FakeRegistry(), "2.0")
+        c := Config(Map("lints", Map("fake-rec", "off")), _FakeRegistry(), "2.0", ["**/*.ahk"], [])
         _Assert(c.SeverityFor("fake-rec") == "off", "rec silenced")
     }
     cases["config: tuple severity form"] := () {
-        c := Config(Map("lints", Map("fake-rec", ["error", Map()])), _FakeRegistry(), "2.0")
+        c := Config(Map("lints", Map("fake-rec", ["error", Map()])), _FakeRegistry(), "2.0", ["**/*.ahk"], [])
         _Assert(c.SeverityFor("fake-rec") == "error", "tuple severity parsed")
     }
 
     cases["config: unknown lint id throws"] := () =>
-        _Throws(() => Config(Map("lints", Map("nope", "warn")), _FakeRegistry(), "2.0"))
+        _Throws(() => Config(Map("lints", Map("nope", "warn")), _FakeRegistry(), "2.0", ["**/*.ahk"], []))
     cases["config: unknown extends throws"] := () =>
-        _Throws(() => Config(Map("extends", "everything"), _FakeRegistry(), "2.0"))
+        _Throws(() => Config(Map("extends", "everything"), _FakeRegistry(), "2.0", ["**/*.ahk"], []))
     cases["config: invalid severity throws"] := () =>
-        _Throws(() => Config(Map("lints", Map("fake-rec", "loud")), _FakeRegistry(), "2.0"))
+        _Throws(() => Config(Map("lints", Map("fake-rec", "loud")), _FakeRegistry(), "2.0", ["**/*.ahk"], []))
     cases["config: severity is case-insensitive"] := () {
-        c := Config(Map("lints", Map("fake-rec", "Error")), _FakeRegistry(), "2.0")
+        c := Config(Map("lints", Map("fake-rec", "Error")), _FakeRegistry(), "2.0", ["**/*.ahk"], [])
         _Assert(c.SeverityFor("fake-rec") == "error", "severity normalized to lowercase")
     }
 
@@ -225,7 +225,7 @@ _UnitCases() {
     cases["config: non-object options throws"] := () =>
         _Throws(() => _OptionsConfig("mode=b"))
     cases["config: oversized tuple throws"] := () =>
-        _Throws(() => Config(Map("lints", Map("fake-options", ["warn", Map(), 1])), _FakeRegistry(), "2.0"))
+        _Throws(() => Config(Map("lints", Map("fake-options", ["warn", Map(), 1])), _FakeRegistry(), "2.0", ["**/*.ahk"], []))
 
     cases["sarif: results live inside the run"] := () {
         log := _SarifLog()

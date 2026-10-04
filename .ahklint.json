@@ -1,6 +1,13 @@
 {
     "target":  "2.1-alpha.30",
     "extends": "recommended",
+    "includes": ["**/*.ahk"],
+    "excludes": [
+      ".ahkbuild/**/*.*",
+      "build/**/*.*",
+      "tests/YUnit/**/*.*",
+      "src/lints/all.ahk"
+    ],
     "lints": {
         "no-goto": "error",
         "one-requires": "error",

@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
+#Import "utils\Glob" { FileSystemMatcher as GlobMatcher }
+
 #Import "./Linter" { Linter }
 #Import "./AutoHotkeyLang" { AutoHotkeyLang }
 #Import "./LintRun" { LintRun }
@@ -35,8 +37,10 @@ export class LintSession {
      */
     LintAll(root) {
         if InStr(FileGetAttrib(root), "D") {
-            loop files root "\*.ahk", "r"
-                this.LintOne(A_LoopFileFullPath)
+            ; static assumes there's only ever one LintSession but avoids recompiling globs
+            static matcher := GlobMatcher(this._cfg.includes, this._cfg.excludes)
+            for match in matcher.Matches(root)
+                this.LintOne(match)
         }
         else {
             this.LintOne(root)

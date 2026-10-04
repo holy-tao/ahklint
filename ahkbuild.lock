@@ -10,8 +10,8 @@
     {
       "name": "ahk-utils",
       "source": "git+git@github.com:holy-tao/ahk-utils.git",
-      "resolved": "638defa3393dccd1ae7a42a01e1f1e343bba5a4c",
-      "checksum": "sha256:43eae8cdf57dc7f4bc5f4a4171f6eeed4a47955a078e1cecb7ca09a0d9061e6d"
+      "resolved": "624c53bb15fdb9c225004a0516f8245fbcebf2c5",
+      "checksum": "sha256:b07dc6a121f9d9fb5fc6e3708978d639aee9bc735dc4251c88d7c0b969c936a8"
     },
     {
       "name": "ahkcollections",

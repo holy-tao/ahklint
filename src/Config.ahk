@@ -4,7 +4,9 @@
 
 #Import "./lints/all" { ALL_LINTS }
 #Import "./Linter" { DEFAULT_TARGET }
-#Import "./Colors" { Yellow }
+#Import "./Colors" { Yellow, Cyan, Red }
+
+#Import "extensions/MapExtensions"
 
 /**
  * Resolve the target version and load/validate config. Target precedence:
@@ -17,9 +19,10 @@
 LoadConfig(args, filepath, stderr) {
     try {
         configPath := args.configPath
-        if (configPath == "") {
-            SplitPath(filepath, , &fileDir)
-            configPath := Config.Discover(fileDir != "" ? fileDir : A_WorkingDir)
+        if configPath = "" {
+            configPath := Config.Discover(filepath)
+            if configPath = ""
+                stderr.WriteLine(Yellow("ahklint: ") "no config file found from " Cyan(filepath) "; using defaults")
         } else if !FileExist(configPath) {
             throw ValueError("no such config file: " configPath)
         }
@@ -37,9 +40,17 @@ LoadConfig(args, filepath, stderr) {
             }
         }
 
-        return Config(parsed, ALL_LINTS, target)
-    } catch as e {
-        stderr.WriteLine("ahklint: " e.message)
+        includes := parsed.Get("includes", ["**/*.ahk"])
+        if !(includes is Array)
+            throw TypeError("invalid config: includes must be an array")
+        excludes := parsed.Get("excludes", [])
+        if !(excludes is Array)
+            throw TypeError("invalid config: excludes must be an array")
+
+        return Config(parsed, ALL_LINTS, target, includes, excludes)
+    }
+    catch as err {
+        stderr.WriteLine(Red("ahklint") ": " err.message)
         ExitApp(2)
     }
 }
@@ -84,15 +95,17 @@ export class Config {
      * @param {Array}  registry ALL_LINTS - lint classes, each with a static `meta`
      * @param {String} target   the resolved target AHK version
      */
-    __New(parsed, registry, target) {
+    __New(parsed, registry, target, includes, excludes) {
         this.target    := target
         this._severity := Map()   ; lint id -> "off" | "warn" | "error"
         this._options  := Map()   ; lint id -> resolved options object (defaults + overrides)
+        this.includes  := includes
+        this.excludes  := excludes
         this._Resolve(parsed, registry)
     }
 
     /** A default config (no file): the recommended preset at the given target. */
-    static Default(registry, target) => Config(Map(), registry, target)
+    static Default(registry, target) => Config(Map(), registry, target, ["**/*.ahk"], [])
 
     /**
      * Read and parse a JSONC config file into a plain object (a Map). Strips

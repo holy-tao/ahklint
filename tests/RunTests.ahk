@@ -175,7 +175,7 @@ RunLints(lang, code, lintId, optsText) {
     buf.Size -= 1                    ; drop the terminator from the parsed range
 
     lintCfg := optsText != "" ? ["warn", JSON.Parse(optsText)] : "warn"
-    cfg := Config(Map("extends", "none", "lints", Map(lintId, lintCfg)), ALL_LINTS, A_AhkVersion)
+    cfg := Config(Map("extends", "none", "lints", Map(lintId, lintCfg)), ALL_LINTS, A_AhkVersion, ["**/*.ahk"], [])
     cfg.UNIT_TEST_RUN := true
 
     return Linter(lang, buf, cfg).Run()
