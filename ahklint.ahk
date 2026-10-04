@@ -1,6 +1,8 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 #ErrorStdOut 'UTF-8'
 
+#Include "src/ErrorHandler.ahk"
+
 #DllLoad "./bin/tree-sitter.dll"
 #DllLoad "./bin/tree-sitter-autohotkey.dll"
 
@@ -46,7 +48,7 @@ main() {
         filepath := A_WorkingDir
 
     if !FileExist(filepath) {
-        Console.Err.WriteLine("ahklint: no such file: " filepath)
+        Console.Err.WriteLine(Red("ahklint") ": no such file: " filepath)
         ExitApp(2)
     }
 

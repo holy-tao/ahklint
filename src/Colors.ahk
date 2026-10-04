@@ -2,7 +2,9 @@
 
 #Import "utils/Console" { Console }
 
-_enabled := true
+; default to false so that errors during startup don't mangle console outputs
+; main() sets to true / false after parsing args and environment variables
+_enabled := false
 
 _Colored(code, text) {
     if !_enabled
