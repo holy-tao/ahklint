@@ -1,6 +1,6 @@
 #Requires AutoHotkey v2.1-alpha.30 64-bit
 
-#Import treesitter { Parser }
+#Import "treesitter" { Parser, Query, QueryCursor }
 #Import "treesitter/util" { Visitor }
 
 #Import "extensions/MapExtensions"
@@ -96,7 +96,10 @@ export class Linter extends Visitor {
      * @returns {Map<Integer, Array<String>>} Map of line numbers to ignored lint ids
      */
     FindIgnoreDirectives() {
-        cursor := this._tree.Query("(directive_comment) @directive")
+        ; Only compile the query once, reuse it for every walk
+        static compiledQuery := Query(this._language, "(directive_comment) @directive")
+        cursor := QueryCursor()
+        cursor.Exec(compiledQuery, this._tree.root)
         ignores := Map()
 
         while match := cursor.NextMatch() {
