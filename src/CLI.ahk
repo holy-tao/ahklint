@@ -19,6 +19,7 @@ class CliArgs {
     fix := false
     applySuggestions := false
     watch := false
+    profile := false
 }
 
 Die(message) {
@@ -75,6 +76,7 @@ ShowHelp() {
     opt(["-f", "--fix"], "Apply autofixes to linted files")
     opt(["-w", "--watch"], "Lint again whenever the file or directory changes")
     opt(["--apply-suggestions"], "Apply suggested fixes to linted files (may be incorrect)")
+    opt(["--profile"], "Report where the time went, per phase and per lint, to stderr")
 
     Console.Out.WriteLine("")
     opt(["--no-color"], "Disable ANSI colors. Also respects the NO_COLOR environment variable")
@@ -124,6 +126,8 @@ ParseArgs(argv) {
                 out.applySuggestions := true
             case "-w", "--watch":
                 out.watch := true
+            case "--profile":
+                out.profile := true
             default:
                 if SubStr(arg, 1, 1) == "-"
                     Die("unknown option: " arg)

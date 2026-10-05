@@ -13,6 +13,7 @@
 #Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
 #Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
 #Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red }
+#Import "./src/Profiler.ahk" { Profiler }
 
 #Import "utils/Console" { Console }
 ;@Ahk2Exe-ConsoleApp
@@ -33,6 +34,7 @@ main()
  */
 Main() {
     args := ParseArgs(A_Args)
+    prof := args.profile ? Profiler() : Profiler.Null
     SetANSIColorsEnabled(!args.noColor)
 
     ; Done here so that help and version respects NO_COLOR
@@ -52,7 +54,9 @@ Main() {
         ExitApp(2)
     }
 
+    t := Profiler.Now()
     cfg := LoadConfig(args, filepath, Console.Err)
+    prof.Phase("config", t)
 
     ; The console streams as it goes; whole-run formats buffer on `run` instead.
     ; `--sarif -` puts SARIF on stdout, so the console output is dropped rather
@@ -63,10 +67,13 @@ Main() {
     if args.sarifPath != ""
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
-    session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions)
+    session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions, prof)
     root := GetFullPathName(filepath)
     session.LintAll(root)
     session.Report()
+
+    if args.profile
+        prof.Report(Console.Err)
 
     if args.watch {
         ; Static, so the watcher outlives this call

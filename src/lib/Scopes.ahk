@@ -215,6 +215,7 @@ export class ScopeTracker {
         this.root := Scope("", "", "")
         this.all.Push(this.root)
         this._stack.Push(this.root)
+        this._profiler := linter._profiler   ; times OnComplete callbacks under --profile
 
         linter.OnEnter(ScopeTracker.FUNCTION_TYPES, this._EnterFunction.Bind(this))
         linter.OnExit(ScopeTracker.FUNCTION_TYPES, (*) => this._stack.Pop())
@@ -238,7 +239,7 @@ export class ScopeTracker {
      * @param {Func(Linter, ScopeTracker) => Any} callback
      */
     OnComplete(callback) {
-        this._callbacks.Push(callback)
+        this._callbacks.Push(this._profiler.Wrap(callback))
     }
 
     /**

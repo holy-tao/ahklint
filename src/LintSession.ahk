@@ -8,6 +8,7 @@
 #Import "./SourceText" { SourceText }
 #Import "./Colors" { Red, Yellow }
 #Import "./Fix" { FixToFixpoint }
+#Import "./Profiler" { Profiler }
 
 /**
  * High-level orchestrator for a lint run.
@@ -19,9 +20,11 @@ export class LintSession {
      * @param {File} stderr where to report a file that couldn't be written
      * @param {Boolean} fix write each file's fixes back to disk as it is linted
      * @param {Boolean} applySuggestions if true, also apply suggestions when fixing
+     * @param {Profiler} prof times the run for `--profile`; omitted, nothing is timed
      */
-    __New(cfg, formatters, stderr, fix := false, applySuggestions := false) {
+    __New(cfg, formatters, stderr, fix := false, applySuggestions := false, prof?) {
         this._cfg := cfg
+        this._profiler := prof ?? Profiler.Null
         this._formatters := formatters
         this._stderr := stderr
         this._fix := fix
@@ -40,7 +43,10 @@ export class LintSession {
     LintAll(root) {
         if InStr(FileGetAttrib(root), "D") {
             ; static assumes there's only ever one LintSession but avoids recompiling globs
-            for match in this.matcher.Matches(root)
+            t := Profiler.Now()
+            matches := this.matcher.Matches(root)
+            this._profiler.Phase("discovery", t)
+            for match in matches
                 this.LintOne(match)
         }
         else {
@@ -57,13 +63,20 @@ export class LintSession {
      * @returns {FileResult} the recorded result
      */
     LintOne(filepath) {
+        prof := this._profiler
+        prof.files++
+
+        t := Profiler.Now()
         for formatter in this._formatters
             formatter.OnFileStart(filepath)
+        prof.Phase("output", t)
 
         result := this._Check(filepath, , &writeError)
 
+        t := Profiler.Now()
         for formatter in this._formatters
             formatter.OnFile(result)
+        prof.Phase("output", t, 0)
 
         ; Set once the formatters have shown the findings: the file linted fine, it
         ; just couldn't be written. Counted by run.ErrorCount.
@@ -150,8 +163,11 @@ export class LintSession {
      */
     _Check(filepath, onlyIfChanged := false, &writeError := "") {
         writeError := "", resolved := []
+        prof := this._profiler
         try {
+            t := Profiler.Now()
             source := FileRead(filepath, "RAW")
+            prof.Phase("read", t)
             if onlyIfChanged {
                 previous := this.run.Find(filepath)
                 if previous && !previous.HasError && previous.source.Matches(source)
@@ -182,7 +198,10 @@ export class LintSession {
                 }
             }
 
-            return this.run.AddFile(filepath, SourceText(source), diagnostics, resolved)
+            t := Profiler.Now()
+            text := SourceText(source)
+            prof.Phase("source text", t)
+            return this.run.AddFile(filepath, text, diagnostics, resolved)
         } catch as e {
             return this.run.AddError(filepath, e)
         }
@@ -190,15 +209,32 @@ export class LintSession {
 
     /** Tell the formatters the run is complete. */
     Report() {
+        t := Profiler.Now()
         for formatter in this._formatters
             formatter.OnFinish(this.run)
+        this._profiler.Phase("output", t, 0)
     }
 
     /**
      * @param {Buffer} source the source code to lint
      * @returns {Array<Diagnostic>} the findings
      */
-    _Lint(source) => Linter(AutoHotkeyLang(), source, this._cfg).Run()
+    _Lint(source) {
+        prof := this._profiler
+
+        t := Profiler.Now()
+        lang := AutoHotkeyLang()
+        prof.Phase("language", t)
+
+        engine := Linter(lang, source, this._cfg, prof)
+        diagnostics := engine.Run()
+
+        ; Freeing the tree, parser, cursor and every lint instance
+        t := Profiler.Now()
+        engine := lang := ""
+        prof.Phase("teardown", t)
+        return diagnostics
+    }
 
     /**
      * Replace the contents of `filepath` with `source`.

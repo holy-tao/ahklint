@@ -11,6 +11,7 @@
 #Import "./Config.ahk" { Config }
 #Import "./lib/Scopes.ahk" { ScopeTracker }
 #Import "./lints/all.ahk" { ALL_LINTS }
+#Import "./Profiler.ahk" { Profiler }
 
 export global DEFAULT_TARGET := "2.0.26"
 
@@ -40,22 +41,37 @@ export class Linter extends Visitor {
      * @param {Buffer} source the file contents (read as "RAW")
      * @param {Config} configMap resolved config; defaults to the recommended preset
      *        at DEFAULT_TARGET when omitted (used by tests and ad-hoc callers)
+     * @param {Profiler} prof times the phases and each lint's listeners;
+     *        omitted, nothing is timed
      */
-    __New(lang, source, cfg?) {
+    __New(lang, source, cfg?, prof?) {
+        prof := this._profiler := prof ?? Profiler.Null
+
+        t := Profiler.Now()
         this._language := lang
         this._parser := Parser(lang)
         this._source := source
         this._config := cfg ?? Config.Default(ALL_LINTS, DEFAULT_TARGET)
         this.ahkVersion := this._config.target
+        prof.Phase("linter setup", t)
+
+        t := Profiler.Now()
         this._tree := this._parser.Parse(source)   ; keep alive: nodes read from it
+        prof.Phase("parse", t)
+
+        t := Profiler.Now()
         this._diagnostics := A_IsCompiled ? [] : TypedArray(Diagnostic)
         this.lints := []
-        this.ignores := this.FindIgnoreDirectives()
-
         super.__New(this._tree.Root)                 ; Visitor walks from the root
+        prof.Phase("linter setup", t, 0)
+
+        t := Profiler.Now()
+        this.ignores := this.FindIgnoreDirectives()
+        prof.Phase("ignore directives", t)
 
         ; Construction phase: each lint registers its listeners. Afterwards the
         ; context is sealed so listeners can't change mid-walk
+        t := Profiler.Now()
         for cls in ALL_LINTS {
             meta := cls.meta
             ; undocumented config option to run everything
@@ -63,10 +79,16 @@ export class Linter extends Visitor {
                     continue
             }
 
-            if this._config.SeverityFor(meta.id) != "off"
+            if this._config.SeverityFor(meta.id) != "off" {
+                prof.owner := meta.id
+                tLint := Profiler.Now()
                 this.lints.Push(cls(this))
+                prof.Init(meta.id, tLint)
+            }
         }
+        prof.owner := ""
         this._sealed := true
+        prof.Phase("lint init", t)
     }
 
     /**
@@ -97,7 +119,12 @@ export class Linter extends Visitor {
 
     /** Walk the tree and return the collected diagnostics. */
     Run() {
+        prof := this._profiler
+        t := Profiler.Now()
         this.Visit()
+        prof.Phase("walk", t)
+        if prof.enabled
+            prof.nodes += this._tree.Root.DescendantCount
         return this._diagnostics
     }
 
@@ -147,7 +174,13 @@ export class Linter extends Visitor {
         get {
             if !this.HasOwnProp("_scopeTracker") {
                 this._AssertUnsealed()
+                ; Shared by every lint that asks, so its listeners get a row of their own
+                prof := this._profiler, owner := prof.owner
+                prof.owner := "(scopes)"
+                t := Profiler.Now()
                 this._scopeTracker := ScopeTracker(this)
+                prof.Init("(scopes)", t)
+                prof.owner := owner
             }
             return this._scopeTracker
         }
@@ -155,6 +188,8 @@ export class Linter extends Visitor {
 
     OnEnter(nodeType, callback, addRemove := 1) {
         this._AssertUnsealed()
+        if addRemove
+            callback := this._profiler.Wrap(callback)
         if nodeType is Array {
             for t in nodeType {
                 super.OnEnter(t, callback, addRemove)
@@ -166,6 +201,8 @@ export class Linter extends Visitor {
 
     OnExit(nodeType, callback, addRemove := 1) {
         this._AssertUnsealed()
+        if addRemove
+            callback := this._profiler.Wrap(callback)
         if nodeType is Array {
             for t in nodeType {
                 super.OnExit(t, callback, addRemove)
