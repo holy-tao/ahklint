@@ -184,6 +184,12 @@ class my_class {
 my_func(Param) => Param
 ```
 
+Built-ins like `A_WorkingDir` aren't checked:
+
+```autohotkey test { "variable": "camelCase" }
+A_WorkingDir := "../example/directory/"
+```
+
 </details>
 
 ### Incorrect

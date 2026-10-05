@@ -201,6 +201,9 @@ class NamingConventions {
      */
     CheckVariable(style, linter, node) {
         name := Trim(node.Text, " `r`n`t")
+        if InStr(name, "A_") == 1
+            return ; don't flag things like A_WorkingDir := "./temp/"
+
         for scope in this.scopes {
             if scope.Has(name)
                 return
