@@ -28,8 +28,8 @@
     {
       "name": "tree-sitter.ahk",
       "source": "git+git@github.com:holy-tao/tree-sitter.ahk.git?branch=feat/v2.1-support",
-      "resolved": "00bbedf885772592b0b8d3bd6e9c414754317d80",
-      "checksum": "sha256:9bd631f9d075c05e3f693d9059acf29e63c320c4fd5ab2009a27dd8662e35834"
+      "resolved": "304dfb67920db148fe2cb0cec1b37aba4e5855eb",
+      "checksum": "sha256:63a89c54856e96835d8c06cebf7b14110698940ff5a276c8e726dd8264328aba"
     }
   ]
 }
