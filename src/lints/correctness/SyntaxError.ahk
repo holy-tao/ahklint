@@ -14,6 +14,8 @@ class SyntaxError {
     }
 
     __New(linter) {
+        if !linter._tree.root.HasError
+            return
         ; TODO might be faster to run a query for ERROR and MISSING nodes once on entering or exiting `source_file`
         ; instead of running a check for every node in the tree?
         linter.OnEnter("*", this.CheckNode.Bind(this))
