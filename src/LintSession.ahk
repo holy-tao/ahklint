@@ -27,6 +27,8 @@ export class LintSession {
         this._fix := fix
         this._applySuggestions := applySuggestions
         this.run := LintRun(cfg)
+
+        this.matcher := GlobMatcher(cfg.includes, cfg.excludes)
     }
 
     /**
@@ -38,8 +40,7 @@ export class LintSession {
     LintAll(root) {
         if InStr(FileGetAttrib(root), "D") {
             ; static assumes there's only ever one LintSession but avoids recompiling globs
-            static matcher := GlobMatcher(this._cfg.includes, this._cfg.excludes)
-            for match in matcher.Matches(root)
+            for match in this.matcher.Matches(root)
                 this.LintOne(match)
         }
         else {

@@ -66,10 +66,13 @@ export class FileWatcher {
             ; Changes were lost, so look at everything again
             this._dirty[this._root] := true
         }
-        else if this._only != "" && change.path = this._only{
-            this._dirty[path] := true
+        else if this._only != "" {
+            ; A file named on the command line is linted whatever the globs say, and
+            ; nothing else in its directory is
+            if change.path = this._only
+                this._dirty[path] := true
         }
-        else if change.path ~= "i)\.ahk$" {
+        else if this._Matches(change.path) {
             this._dirty[path] := true
         }
         else if change.action != "MODIFIED" && DirExist(path) {
@@ -81,6 +84,20 @@ export class FileWatcher {
         ; Always, even with nothing dirty: a removed directory names no files, and
         ; the flush is what notices that results have lost theirs.
         SetTimer(this._flushTimer, -DEBOUNCE_MS)
+    }
+
+    /**
+     * Whether a changed path is matches include and exclude globs.
+     *
+     * @param {String} rel the path relative to the watched directory
+     */
+    _Matches(rel) {
+        ; Globs are matched against the path relative to the root, "/"-separated
+        rel := StrReplace(rel, "\", "/")
+        SplitPath(rel, , &parent)
+
+        matcher := this._session.matcher
+        return matcher.PathMatches(rel) && !matcher._IsBaseExcluded(parent)
     }
 
     _Flush() {
@@ -97,10 +114,17 @@ export class FileWatcher {
             session := this._session
             session.ClearFixed()
             changed := session.Prune()
+            matches := ""
             for path in dirty {
                 if DirExist(path) {
-                    loop files path "\*.ahk", "r"
-                        changed := session.Refresh(A_LoopFileFullPath) || changed
+                    ; Walk from the root like LintAll so the globs see the same relative paths
+                    if !IsObject(matches)
+                        matches := session.matcher.Matches(this._dir)
+                    prefix := RTrim(path, "\") "\"
+                    for match in matches {
+                        if SubStr(match, 1, StrLen(prefix)) = prefix
+                            changed := session.Refresh(match) || changed
+                    }
                 } else {
                     changed := session.Refresh(path) || changed
                 }
