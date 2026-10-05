@@ -24,8 +24,7 @@ class ConcatStyle {
             requireExplicitForNonLiteral: {
                 type:        "boolean",
                 default:     false,
-                description: "Require explicit concatenation operators when neither operand is a string literal."
-                    . " This has no effect when style is `"explicit`"."
+                description: "Require explicit concatentation in `"implicit`" mode when neither operand is a string literal."
             }
         }
     }
