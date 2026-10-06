@@ -2,6 +2,7 @@
 
 #Import "../../lib/Functions" { CollectParams, FUNCTION_NODES }
 #Import "../../Diagnostic" { Fix }
+#Import "collections/Set" { Set }
 
 class UnusedParam {
     static meta => {
@@ -23,6 +24,7 @@ class UnusedParam {
         linter.OnExit(FUNCTION_NODES, this.ExitFn.Bind(this))
 
         linter.OnEnter("identifier", this.SeeIdent.Bind(this))
+        this.frames.Capacity := 24
     }
 
     EnterFn(_, node) => this.frames.Push({ params: CollectParams(node), used: Map() })
@@ -50,21 +52,15 @@ class UnusedParam {
             i--
         }
 
-        if !frame.used.Has(nodeText)
-            frame.used[nodeText] := 1
-        else
-            frame.used[nodeText]++
+        frame.used.Set(nodeText, frame.used.Get(nodeText, 0) + 1)
     }
 
     ExitFn(linter, _) {
         frame := this.frames.Pop()
 
         for name, paramNode in frame.params {
-            if InStr(name, "_") == 1
-                continue
-
             ; Expect each identifier param to appear more than once (1 for the declaration)
-            if !frame.used.Has(name) || (frame.used[name] <= 1) {
+            if frame.used.Get(name, 0) <= 1 && InStr(name, "_") != 1 {
                 msg := Format("Parameter ``{1}`` is never used. If this is intentional, prefix it with an underscore: ``_{1}``", name)
                 linter.Report(UnusedParam.meta, paramNode, msg, Fix.To(paramNode, "_" name))
             }
