@@ -100,7 +100,7 @@ export class Linter extends Visitor {
         static compiledQuery := Query(this._language, "(directive_comment) @directive")
         cursor := QueryCursor()
         cursor.Exec(compiledQuery, this._tree.root)
-        ignores := Map()
+        ignores := Map(), ignores.CaseSense := "off"
 
         while match := cursor.NextMatch() {
             node := match.captures[1].node
