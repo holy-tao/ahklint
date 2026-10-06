@@ -31,23 +31,22 @@ class NullProfiler {
  */
 export class Profiler {
     /** @type {NullProfiler} */
-    static Null := ""
+    static NULL := NullProfiler()
 
     static _freq := 0
 
     static __New() {
         if this != Profiler
             return
-        DllCall("QueryPerformanceFrequency", "int64*", &freq := 0)
+        DllCall("QueryPerformanceFrequency", "uint64*", &freq := 0) ;@ahklint-ignore use-type-classes
         Profiler._freq := freq
-        Profiler.Null := NullProfiler()
     }
 
     /**
      * The performance counter, in ticks
      * @returns {Integer}
      */
-    static Now() => (DllCall("QueryPerformanceCounter", "int64*", &t := 0), t)
+    static Now() => (DllCall("QueryPerformanceCounter", "uint64*", &t := 0), t) ;@ahklint-ignore use-type-classes
 
     enabled := true
 
@@ -70,7 +69,7 @@ export class Profiler {
 
         ; Everything before this point - loading the exe and the DLLs, running
         ; static initializers - is timed from the process's creation
-        DllCall("GetSystemTimePreciseAsFileTime", "int64*", &now := 0)
+        DllCall("GetSystemTimePreciseAsFileTime", Int64.Ptr, &now := 0)
         created := Profiler._ProcessTimes().created
         this.Phase("startup", this._start - (now - created) * Profiler._freq // 10000000)
     }
@@ -117,9 +116,9 @@ export class Profiler {
 
         Timed(a, b) {
             outer := self._child, self._child := 0
-            DllCall("QueryPerformanceCounter", "int64*", &t0 := 0)
+            DllCall("QueryPerformanceCounter", "uint64*", &t0 := 0) ;@ahklint-ignore use-type-classes
             callback(a, b)
-            DllCall("QueryPerformanceCounter", "int64*", &t1 := 0)
+            DllCall("QueryPerformanceCounter", "uint64*", &t1 := 0) ;@ahklint-ignore use-type-classes
             elapsed := t1 - t0
             bucket.ticks += elapsed - self._child
             bucket.calls++
@@ -199,7 +198,8 @@ export class Profiler {
      */
     _MeasureWrapper() {
         static N := 20000
-        Noop(a, b) {
+        Noop(*) {
+            ; does nothing
         }
 
         probe := Profiler()
@@ -228,8 +228,8 @@ export class Profiler {
      * @returns {Object} `created`, `kernel`, `user`
      */
     static _ProcessTimes() {
-        DllCall("GetProcessTimes", "ptr", DllCall("GetCurrentProcess", "ptr"),
-            "int64*", &created := 0, "int64*", &exited := 0, "int64*", &kernel := 0, "int64*", &user := 0)
+        DllCall("GetProcessTimes", IntPtr, DllCall("GetCurrentProcess", IntPtr),
+            Int64.Ptr, &created := 0, Int64.Ptr, &exited := 0, Int64.Ptr, &kernel := 0, Int64.Ptr, &user := 0)
         return { created: created, kernel: kernel, user: user }
     }
 }
