@@ -5,14 +5,7 @@
  * lints that reason about case-sensitive comparisons.
  */
 
-/**
- * The functions that normalize case, keyed by name. Case-insensitive, like AHK's function names.
- * @returns {Map<String, Func>}
- */
-export Normalizers() {
-    static m := CaseInsensitiveMap("StrLower", StrLower, "StrUpper", StrUpper, "StrTitle", StrTitle)
-    return m
-}
+NORMALIZERS := CaseInsensitiveMap("StrLower", StrLower, "StrUpper", StrUpper, "StrTitle", StrTitle)
 
 /**
  * Collect every case-normalizing call reachable from `node` through concatenation, parentheses, and
@@ -38,7 +31,7 @@ export CollectNormalizations(node, out := []) {
                 CollectNormalizations(seq.GetNamedChild(0), out)
 
         case "function_call":
-            if Normalizers().Has(CalleeName(node)) && Subject(node)
+            if NORMALIZERS.Has(CalleeName(node)) && Subject(node)
                 out.Push(node)
             else if IsCasePreserving(node)
                 CollectNormalizations(Subject(node), out)
@@ -70,8 +63,8 @@ export ClassifyCase(node) {
 
             case "function_call":
                 name := CalleeName(node)
-                if Normalizers().Has(name) {
-                    fn := Normalizers()[name]
+                if NORMALIZERS.Has(name) {
+                    fn := NORMALIZERS[name]
                     return { fn: fn, call: node, exact: !(viaSubStr && fn == StrTitle) }
                 }
                 if !IsCasePreserving(node)

@@ -148,7 +148,7 @@ export class Profiler {
 
         lints := []
         callbackTicks := 0, callbackCalls := 0
-        for id, bucket in this._lints {
+        for _, bucket in this._lints {
             lints.Push(bucket)
             callbackTicks += bucket.ticks
             callbackCalls += bucket.calls

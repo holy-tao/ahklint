@@ -1,6 +1,6 @@
 #Requires AutoHotkey v2.1-alpha.30
 
-#Import "../../lib/Util.ahk" { GetChildOfType, FlattenNode, FirstNamedChildOfType }
+#Import "../../lib/Util.ahk" { TryGetChildOfType, FlattenNode, FirstNamedChildOfType }
 #Import "../../Diagnostic" { Fix }
 
 ; Patterns avoid nested quantifiers: `(?:[a-z0-9]+[A-Z]*)*` backtracks exponentially
@@ -276,10 +276,9 @@ class NamingConventions {
             return params
         }
 
-        try paramSeq := GetChildOfType(head, "param_sequence")
-        if !IsSet(paramSeq) || paramSeq.IsNull {
+        paramSeq := TryGetChildOfType(head, "param_sequence")
+        if paramSeq.IsNull
             return params
-        }
 
         current := paramSeq.GetNamedChild(0)
 

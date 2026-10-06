@@ -1,7 +1,7 @@
 #Requires AutoHotkey v2.1-alpha.30
 
 #Import "extensions/ArrayExtensions"
-#Import "Util" { GetChildOfType }
+#Import "Util" { TryGetChildOfType }
 
 FUNCTION_NODES := [
     "function_declaration",
@@ -24,10 +24,9 @@ CollectParams(node) {
     params := Map()
     params.CaseSense := "off"
 
-    try paramSeq := GetChildOfType(node.GetChildByFieldName("head"), "param_sequence")
-    if !IsSet(paramSeq) || paramSeq.IsNull {
+    paramSeq := TryGetChildOfType(node.GetChildByFieldName("head"), "param_sequence")
+    if paramSeq.IsNull
         return params
-    }
 
     current := paramSeq.GetNamedChild(0)
 

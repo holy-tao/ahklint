@@ -141,17 +141,16 @@ export class Config {
     }
 
     /** Effective severity for a lint id: "off" | "warn" | "error". */
-    SeverityFor(id) => this._severity.Has(id) ? this._severity[id] : "off"
+    SeverityFor(id) => this._severity.Get(id, "off")
 
     /** Is this lint enabled (effective severity is not "off")? */
     IsEnabled(id) => this.SeverityFor(id) != "off"
 
     /**
      * Resolved options for a lint id: every option declared in its meta.options,
-     * at its configured value or its default. A copy, since one Config is shared
-     * by every file in a run. Lints without options get an empty object.
+     * at its configured value or its default.
      */
-    OptionsFor(id) => this._options.Has(id) ? this._options[id].Clone() : {}
+    OptionsFor(id) => this._options.Get(id, {}).Clone()
 
     /**
      * The metas of every lint this config enables, in registry order.
@@ -181,7 +180,7 @@ export class Config {
             this._options[m.id] := Config._DefaultOptions(m)
         }
 
-        extends := parsed.Has("extends") ? parsed["extends"] : "recommended"
+        extends := parsed.Get("extends", "recommended")
         switch extends, "Off" {
             case "recommended":
                 for id, m in metaById

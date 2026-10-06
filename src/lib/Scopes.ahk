@@ -297,7 +297,7 @@ export class ScopeTracker {
     _SeeDeclaration(_, node) {
         if this.current.isGlobal || node.NamedChildCount != 1
             return
-        switch ScopeTracker._Keyword(node) {
+        switch ScopeTracker._Keyword(node), "off" {
             case "global": this.current.assumeGlobal := true
             case "static": this.current.assumeStatic := true
         }
@@ -329,10 +329,11 @@ export class ScopeTracker {
     _SeeIdentifier(_, node) {
         parent := node.Parent
         scope := this.current
-        if ScopeTracker.NAME_PARENTS.Has(parent.type)
+        parentType := parent.type
+        if ScopeTracker.NAME_PARENTS.Has(parentType)
             return
 
-        switch parent.type {
+        switch parentType, "off" {
             case "property_declarator", "default_param":
                 if ScopeTracker._IsField(parent, "name", node)
                     return
@@ -436,7 +437,7 @@ export class ScopeTracker {
         name := node.text
         if !scope.isGlobal {
             keyword := this._Keyword(declarator.Parent)
-            if keyword == "global"
+            if keyword = "global"
                 scope.globals[name] := true
             else
                 scope.Declare(name, keyword, node)
@@ -478,7 +479,7 @@ export class ScopeTracker {
     static _IsPlain(assignment) => Trim(assignment.GetChildByFieldName("operator").text, " `t`r`n") == ":="
 
     /** The scope keyword of a `variable_declaration`: "global", "local" or "static" */
-    static _Keyword(declaration) => StrLower(Trim(declaration.GetChildByFieldName("scope").text, " `t`r`n"))
+    static _Keyword(declaration) => Trim(declaration.GetChildByFieldName("scope").text, " `t`r`n")
 
     /**
      * The identifiers naming the parameters of a function. A property's parameters (`Item[key]`)
@@ -487,7 +488,7 @@ export class ScopeTracker {
      */
     static _Params(node) {
         params := []
-        if node.type == "getter" || node.type == "setter" {
+        if node.type ~= "^(getter|setter)$" {
             owner := node.Parent
             while !owner.IsNull && owner.type != "property_declaration"
                 owner := owner.Parent
@@ -505,7 +506,8 @@ export class ScopeTracker {
         if sequence.IsNull
             return params
 
-        for param in sequence.GetNamedChildren() {
+        loop sequence.NamedChildCount {
+            param := sequence.GetNamedChild(A_Index - 1)
             loop {
                 switch param.type {
                     case "optional_param", "default_param", "variadic_param":

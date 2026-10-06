@@ -44,13 +44,14 @@ GetChildOfType(node, type) {
  * @returns {Node} the found node
  */
 TryGetChildOfType(parent, type) {
+    static NULL := Node()
     loop parent.NamedChildCount {
         child := parent.GetNamedChild(A_Index - 1)
         if child.Type == type
             return child
     }
 
-    return Node()
+    return NULL
 }
 
 /**
@@ -75,19 +76,10 @@ GetArg(fnNode, argIndex) {
     return arg.IsNull ? unset : arg
 }
 
-FirstNamedChildOfType(parent, type) =>
-    parent.GetNamedChildren()
-    .FirstOrDefault(child => child.type == type, Node())
+FirstNamedChildOfType(parent, type) => TryGetChildOfType(parent, type)
 
 /** Whether the given node is a comment of any kind */
-IsComment(node) {
-    switch node.type, "off" {
-        case "line_comment", "block_comment", "directive_comment":
-            return true
-        default:
-            return false
-    }
-}
+IsComment(node) => !!RegExMatch(node.type, "^(line_comment|block_comment|directive_comment)$")
 
 /**
  * Joins strings with `delimiter`.
@@ -95,7 +87,7 @@ IsComment(node) {
  * @param {String} strs Zero or more strings to join with `delimiter`
  */
 StrJoin(delimiter, strs*) {
-    outStr := ""
+    outStr := "", VarSetStrCapacity(&outStr, 1024)
     for str in strs {
         outStr .= String(str)
         if A_Index < strs.Length
