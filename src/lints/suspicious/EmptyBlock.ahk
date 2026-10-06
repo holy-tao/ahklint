@@ -24,8 +24,10 @@ class EmptyBlock {
     __New(linter) {
         this.allowComments := linter.Options(EmptyBlock.meta).allowComments
         linter.OnEnter("block", (linter, node) {
-            if node.GetNamedChildren().Any(child => this.allowComments || !IsComment(child))
-                return
+            loop node.NamedChildCount {
+                if this.allowComments || !IsComment(node.GetNamedChild(A_Index - 1))
+                    return
+            }
             linter.Report(EmptyBlock.meta, node, "This block is empty. Are you forgetting anything?")
         })
     }
