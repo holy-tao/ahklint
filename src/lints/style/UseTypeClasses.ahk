@@ -60,8 +60,7 @@ class UseTypeClasses {
         if !opts.allowPtr
             this.DllCallTypes["ptr"] := "IntPtr"
 
-        linter.OnEnter("function_call", this.Evaluate.Bind(this))
-        linter.OnEnter("call_statement", this.Evaluate.Bind(this))
+        linter.OnEnter(["function_call", "call_statement"], this.Evaluate.Bind(this))
     }
 
     Evaluate(linter, node) {

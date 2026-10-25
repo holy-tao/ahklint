@@ -6,7 +6,7 @@
 #Import "cJson\JSON.ahk" { JSON }
 
 #Import "../src/AutoHotkeyLang.ahk" { AutoHotkeyLang }
-#Import "../src/Linter.ahk" { Linter, DEFAULT_TARGET }
+#Import "../src/Linter.ahk" { Linter }
 #Import "../src/lints/all.ahk" { ALL_LINTS }
 
 #Include "./UnitTests.ahk"

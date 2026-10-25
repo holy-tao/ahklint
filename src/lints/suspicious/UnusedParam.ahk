@@ -2,7 +2,6 @@
 
 #Import "../../lib/Functions" { CollectParams, FUNCTION_NODES }
 #Import "../../Diagnostic" { Fix }
-#Import "collections/Set" { Set }
 
 class UnusedParam {
     static meta => {
