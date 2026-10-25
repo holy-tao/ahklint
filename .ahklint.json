@@ -3,10 +3,10 @@
     "extends": "recommended",
     "includes": ["**/*.ahk"],
     "excludes": [
-      ".ahkbuild/**/*.*",
-      "build/**/*.*",
-      "tests/YUnit/**/*.*",
-      "src/lints/all.ahk"
+      "**/.ahkbuild/**/*.*",
+      "**/build/**/*.*",
+      "**/tests/YUnit/**/*.*",
+      "**/lints/all.ahk"
     ],
     "lints": {
         "no-goto": "error",

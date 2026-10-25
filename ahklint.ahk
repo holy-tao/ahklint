@@ -45,14 +45,14 @@ Main() {
         ExitApp(0)
     }
 
-    filepath := args.file
-    if filepath == ""
-        filepath := A_WorkingDir
+    filepath := args.file || A_WorkingDir
 
     if !FileExist(filepath) {
         Console.Err.WriteLine(Red("ahklint") ": no such file: " filepath)
         ExitApp(2)
     }
+
+    filepath := GetFullPathName(filepath)
 
     t := Profiler.Now()
     cfg := LoadConfig(args, filepath, Console.Err)
@@ -78,7 +78,7 @@ Main() {
     if args.watch {
         ; Static, so the watcher outlives this call
         static _watcher
-        _watcher := FileWatcher(session, root, Console.Out)
+        _watcher := FileWatcher(session, filepath, Console.Out)
         Persistent()
         return
     }
