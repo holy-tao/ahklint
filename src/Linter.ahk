@@ -97,23 +97,29 @@ export class Linter extends Visitor {
      */
     FindIgnoreDirectives() {
         ; Only compile the query once, reuse it for every walk
-        static compiledQuery := Query(this._language, "(directive_comment) @directive")
-        cursor := QueryCursor()
-        cursor.Exec(compiledQuery, this._tree.root)
+        static compiledQuery := Query(this._language, "
+        (
+            (((directive_comment
+                (directive_identifier) @name
+                (directive_arguments) @args) @directive)
+            (#any-of? @name "ahklint-ignore" "ahklint-ignore-next-line"))
+        )")
+        cursor := QueryCursor(), cursor.Exec(compiledQuery, this._tree.root)
         ignores := Map(), ignores.CaseSense := "off"
 
         while match := cursor.NextMatch() {
-            node := match.captures[1].node
-            name := node.GetChildByFieldName("directive").text
-            if InStr(name, "ahklint") != 1
-                continue ; not our directive
+            args := "", directive := "", name := ""
 
-            ignoredIds := StrSplit(node.GetChildByFieldName("arguments").text, " ", " `r`n`t")
-                .Filter(str => str)
+            for capture in match.captures {
+                ;@ahkbuild-safe
+                %compiledQuery.GetCaptureNameForId(capture.index)% := capture.node
+            }
 
-            switch name, "off" {
-                case "ahklint-ignore": ignores[node.startPoint.row] := ignoredIds
-                case "ahklint-ignore-next-line": ignores[node.startPoint.row + 1] := ignoredIds
+            ignoredIds := StrSplit(args.text, " ", " `r`n`t").Filter(str => str)
+
+            switch name.text, "off" {
+                case "ahklint-ignore": ignores[directive.startPoint.row] := ignoredIds
+                case "ahklint-ignore-next-line": ignores[directive.startPoint.row + 1] := ignoredIds
             }
         }
 
