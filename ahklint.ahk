@@ -3,8 +3,8 @@
 
 #Import "src/ErrorHandler"
 
-#DllLoad "./bin/tree-sitter.dll"
-#DllLoad "./bin/tree-sitter-autohotkey.dll"
+#DllLoad "%A_ScriptDir%/bin/tree-sitter.dll"
+#DllLoad "%A_ScriptDir%/bin/tree-sitter-autohotkey.dll"
 
 #Import "./src/CLI.ahk" { ParseArgs, ShowVersion, ShowHelp }
 #Import "./src/Config.ahk" { LoadConfig }
