@@ -63,6 +63,21 @@ ahklint.exe --target v2.1-alpha.32
 Set or override the target AutoHotkey version. This is not necessary if `target` is set in the
 [configuration file]({{< relref "/config" >}}), and overrides it if it is.
 
+#### --format
+
+```bash
+ahklint.exe --format github
+```
+
+Choose the format written to stdout:
+
+- `console` (the default): source excerpts with the offending span underlined, for people.
+- `github`: [workflow commands](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands)
+  that GitHub Actions turns into annotations on the pull request or commit. Paths are written relative to
+  `GITHUB_WORKSPACE`.
+
+Cannot be combined with `--watch`, or with `--sarif -`, since both write to stdout. `--sarif` to a file is fine.
+
 #### --sarif, -s
 
 ```bash

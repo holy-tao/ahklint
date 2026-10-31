@@ -12,6 +12,7 @@
 #Import "./src/FileWatcher.ahk" { FileWatcher }
 #Import "./src/formatters/ConsoleFormatter.ahk" { ConsoleFormatter }
 #Import "./src/formatters/SarifFormatter.ahk" { SarifFormatter }
+#Import "./src/formatters/GithubFormatter.ahk" { GithubFormatter }
 #Import "./src/Colors" { SetEnabled as SetANSIColorsEnabled, Red }
 #Import "./src/Profiler.ahk" { Profiler }
 
@@ -70,7 +71,9 @@ Main() {
     ; `--sarif -` puts SARIF on stdout, so the console output is dropped rather
     ; than mixed into the JSON.
     formatters := []
-    if args.sarifPath != "-"
+    if args.format == "github"
+        formatters.Push(GithubFormatter(Console.Out))
+    else if args.sarifPath != "-"
         formatters.Push(ConsoleFormatter(Console.Out, false))
     if args.sarifPath != ""
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))

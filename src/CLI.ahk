@@ -21,6 +21,7 @@ class CliArgs {
     watch := false
     profile := false
     failOn := "error"
+    format := "console"
 }
 
 Die(message) {
@@ -72,6 +73,7 @@ ShowHelp() {
     Console.Out.WriteLine(Yellow("OPTIONS:"))
     Opt(["-c", "--config"], "Path to the config file to use", "discovered automatically")
     Opt(["-t", "--target"], "Target AutoHotkey version. Overrides the config file if present", "2.0.26")
+    Opt(["--format"], "Output format for stdout (console, github)", "console")
     Opt(["-s", "--sarif"], "Path to write SARIF output to, or '-' for stdout")
     opt(["-f", "--fix"], "Apply autofixes to linted files")
     opt(["-w", "--watch"], "Lint again whenever the file or directory changes")
@@ -136,6 +138,13 @@ ParseArgs(argv) {
                 if value != "error" && value != "warn" && value != "never"
                     Die("--fail-on must be one of 'error', 'warn', or 'never'. Got: '" value "'")
                 out.failOn := value
+            case "--format":
+                if i == argv.Length
+                    Die("--format requires an argument")
+                value := StrLower(argv[++i])
+                if value != "console" && value != "github"
+                    Die("--format must be one of 'console' or 'github'. Got: '" value "'")
+                out.format := value
             default:
                 if SubStr(arg, 1, 1) == "-"
                     Die("unknown option: " arg)
@@ -151,6 +160,15 @@ ParseArgs(argv) {
     ; A watch never finishes, and SARIF is one document describing a finished run
     if out.watch && out.sarifPath != ""
         Die("--watch cannot be combined with --sarif")
+
+    ; Both want stdout. The console is dropped silently for `--sarif -`, but a
+    ; format that was asked for is not.
+    if out.format != "console" && out.sarifPath == "-"
+        Die("--format " out.format " cannot be combined with --sarif -")
+
+    ; Watch mode redraws the screen, which only makes sense for the console
+    if out.watch && out.format != "console"
+        Die("--watch cannot be combined with --format " out.format)
 
     return out
 }
