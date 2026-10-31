@@ -35,22 +35,29 @@ export class LintSession {
     }
 
     /**
-     * Lint `root`. If a file, lints the file itself, if it's a directory, lints every
-     * file in it or its subdirectories. Exclusions are not yet supported.
+     * Lint each of `roots`. A file is linted itself; a directory has every file in
+     * it or its subdirectories that the config's globs match linted. A file reached
+     * through more than one root (`dir` and `dir\a.ahk`) is linted once.
      *
-     * @param {String} root absolute path of a file or directory
+     * @param {Array<String>} roots absolute paths of files or directories
      */
-    LintAll(root) {
-        if InStr(FileGetAttrib(root), "D") {
-            ; static assumes there's only ever one LintSession but avoids recompiling globs
-            t := Profiler.Now()
-            matches := this.matcher.Matches(root)
-            this._profiler.Phase("discovery", t)
-            for match in matches
+    LintAll(roots) {
+        seen := Map(), seen.CaseSense := "Off"   ; Windows paths are case-insensitive
+        for root in roots {
+            if InStr(FileGetAttrib(root), "D") {
+                t := Profiler.Now()
+                matches := this.matcher.Matches(root)
+                this._profiler.Phase("discovery", t)
+            } else {
+                matches := [root]
+            }
+
+            for match in matches {
+                if seen.Has(match)
+                    continue
+                seen[match] := true
                 this.LintOne(match)
-        }
-        else {
-            this.LintOne(root)
+            }
         }
     }
 

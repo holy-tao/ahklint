@@ -9,7 +9,7 @@
  * CLI options with their defaults. Mostly exists to get editor hints.
  */
 class CliArgs {
-    file := ""
+    paths := []
     configPath := ""
     target := ""
     noColor := !!EnvGet("NO_COLOR")
@@ -64,10 +64,10 @@ ShowHelp() {
     Console.Out.WriteLine(Format("{1}: an AutoHotkey v2/v2.1 linter.", Green(A_ScriptName)))
     Console.Out.WriteLine("")
     Console.Out.WriteLine(Yellow("USAGE:")) ; TODO: bold yellow
-    Console.Out.WriteLine(Format("  {1} {2} {3}", Green(A_ScriptName), Cyan("[options]"), Magenta("[path]")))
+    Console.Out.WriteLine(Format("  {1} {2} {3}", Green(A_ScriptName), Cyan("[options]"), Magenta("[paths...]")))
     Console.Out.WriteLine("")
     Console.Out.WriteLine(Yellow("ARGUMENTS:"))
-    Arg("path", "File or directory containing files to lint", "cwd")
+    Arg("paths", "Files or directories containing files to lint", "cwd")
     Console.Out.WriteLine("")
     Console.Out.WriteLine(Yellow("OPTIONS:"))
     Opt(["-c", "--config"], "Path to the config file to use", "discovered automatically")
@@ -131,14 +131,14 @@ ParseArgs(argv) {
             default:
                 if SubStr(arg, 1, 1) == "-"
                     Die("unknown option: " arg)
-                if out.file == "" {
-                    out.file := arg
-                } else {
-                    Die("unrecognized argument: " arg)
-                }
+                out.paths.Push(arg)
         }
         i++
     }
+
+    ; The watcher follows one root
+    if out.watch && out.paths.Length > 1
+        Die("--watch accepts only one path")
 
     ; A watch never finishes, and SARIF is one document describing a finished run
     if out.watch && out.sarifPath != ""

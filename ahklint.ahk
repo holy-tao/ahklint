@@ -24,7 +24,7 @@ Console.Attach()
 main()
 
 /**
- * CLI entry point: `ahklint [--config <path>] [--target <ver>] [--sarif <path>] <file.ahk>`
+ * CLI entry point: `ahklint [--config <path>] [--target <ver>] [--sarif <path>] [paths...]`
  *
  * Resolves the arguments, config and formatters, then hands the linting itself
  * to a LintSession.
@@ -45,17 +45,24 @@ Main() {
         ExitApp(0)
     }
 
-    filepath := args.file || A_WorkingDir
+    paths := args.paths.Length ? args.paths : [A_WorkingDir]
 
-    if !FileExist(filepath) {
-        Console.Err.WriteLine(Red("ahklint") ": no such file: " filepath)
-        ExitApp(2)
+    ; Report every missing path at once rather than one per run
+    missing := false
+    for path in paths {
+        if !FileExist(path) {
+            Console.Err.WriteLine(Red("ahklint") ": no such file: " path)
+            missing := true
+        }
     }
+    if missing
+        ExitApp(2)
 
-    filepath := GetFullPathName(filepath)
+    paths := paths.Map(GetFullPathName)
 
+    ; One config serves the whole run, so it is discovered from the first path
     t := Profiler.Now()
-    cfg := LoadConfig(args, filepath, Console.Err)
+    cfg := LoadConfig(args, paths[1], Console.Err)
     prof.Phase("config", t)
 
     ; The console streams as it goes; whole-run formats buffer on `run` instead.
@@ -68,17 +75,16 @@ Main() {
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
     session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions, prof)
-    root := GetFullPathName(filepath)
-    session.LintAll(root)
+    session.LintAll(paths)
     session.Report()
 
     if args.profile
         prof.Report(Console.Err)
 
     if args.watch {
-        ; Static, so the watcher outlives this call
+        ; Static, so the watcher outlives this call. ParseArgs allows only one path.
         static _watcher
-        _watcher := FileWatcher(session, filepath, Console.Out)
+        _watcher := FileWatcher(session, paths[1], Console.Out)
         Persistent()
         return
     }

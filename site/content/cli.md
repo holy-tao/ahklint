@@ -18,28 +18,28 @@ location on disk.
 ahklint.exe                             # lint every file in the cwd
 ahklint.exe ./path/to/script.ahk        # lint script.ahk
 ahklint.exe ./path/to/script.ahk --fix  # automatically fix violations
+ahklint.exe ./src ./tools/build.ahk     # lint a directory and a file
 ```
 
-By default, `ahklint` does a one-off lint of either a single file or a directory containing files. If [`path`](#path)
-is a directory, it lints every `.ahk` file in it and any of its subdirectories.
+By default, `ahklint` does a one-off lint of the files and directories it is given. If a [`path`](#paths) is a
+directory, it lints every `.ahk` file in it and any of its subdirectories.
 
 ## CLI Arguments Reference
 
 ### Positional Arguments
 
-#### path
+#### paths
 
 ```bash
-ahklint.exe ./path/to/directory
+ahklint.exe ./path/to/directory ./path/to/script.ahk
 ```
 
 Determines the file or files to lint. By default, every `.ahk` file in the current working directory is linted. You
-can pass an explicit filepath to lint every file in a directory, or a specific file. If this is directory, _every_
-`.ahk` file in it or any of its subdirectories is linted.
+can pass any number of directories, files, or both. For a directory, _every_ `.ahk` file in it or any of its
+subdirectories is linted. A file reached through more than one path is only linted once.
 
-> [!NOTE]
-> `ahklint` does not currently support excluding or including files or directories by extension, path, glob, etc, but
-> should in the future.
+All of the paths are linted with one configuration file, discovered from the first path. Use
+[`--config`](#--config--c) to choose it explicitly.
 
 ### Options
 
@@ -51,8 +51,8 @@ ahklint.exe --config ./path/to/ahklint.json
 
 Specify the [configuration file]({{< relref "/config" >}}) to use instead of discovering it automatically.
 
-By default, `ahklint` discovers your config file by walking up directories from its current working directory; this
-flag overrides that behavior.
+By default, `ahklint` discovers your config file by walking up directories from the first path it is given (or the
+current working directory, if none is); this flag overrides that behavior.
 
 #### --target, -t
 
@@ -88,8 +88,10 @@ Apply fixes to lints automatically.
 ahklint.exe --watch
 ```
 
-Watch the target file or directory for changes and re-lint whenever they change. This can be combined with `--fix`
-and `--apply-suggestions` (if desired) to approximate editors' format-on-save behavior.
+Watch the target file or directory for changes and re-lint whenever they change. Only one path can be watched. This
+can be combined with `--fix` and `--apply-suggestions` (if desired) to approximate editors' format-on-save behavior.
+
+`--watch` cannot be used if more than one path is specified.
 
 #### --apply-suggestions
 
