@@ -12,9 +12,14 @@ Every diagnostic links here, to the page for the lint that produced it. Browse t
 **[Lints]({{< relref "/lints" >}})**, or take a look at **[Configuration]({{< relref "/config" >}})** or the
 **[CLI]({{< relref "/cli" >}})** reference.
 
-> [!NOTE]
-> `ahklint` is very much under construction. Expect new lints to be added, and new functionality (including
-> editor integrations).
+```text
+C:\Example\ahklint\example.ahk:4:5 [fileappend-loop] warn:
+Line |
+   4 |     FileAppend(line, "output.txt")
+     |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     | Open and close the file outside of the loop instead of calling FileAppend
+     | See: https://holy-tao.github.io/ahklint/lints/fileappend-loop
+```
 
 ## Install
 
