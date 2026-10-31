@@ -100,6 +100,19 @@ export class LintRun {
         }
     }
 
+    /**
+     * Findings of one severity across every file.
+     * @param {String} severity "warn" | "error"
+     * @returns {Integer}
+     */
+    CountBySeverity(severity) {
+        total := 0
+        for result in this.results
+            for diag in result.diagnostics
+                total += diag.severity = severity
+        return total
+    }
+
     /** Total findings resolved by `--fix` across every file. */
     fixedCount {
         get {

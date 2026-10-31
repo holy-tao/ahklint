@@ -20,15 +20,18 @@ export class LintSession {
      * @param {File} stderr where to report a file that couldn't be written
      * @param {Boolean} fix write each file's fixes back to disk as it is linted
      * @param {Boolean} applySuggestions if true, also apply suggestions when fixing
+     * @param {String} failOn the least severe finding that fails the run: "error",
+     *        "warn", or "never"; see ExitCode
      * @param {Profiler} prof times the run for `--profile`; omitted, nothing is timed
      */
-    __New(cfg, formatters, stderr, fix := false, applySuggestions := false, prof?) {
+    __New(cfg, formatters, stderr, fix := false, applySuggestions := false, failOn := "error", prof?) {
         this._cfg := cfg
         this._profiler := prof ?? Profiler.Null
         this._formatters := formatters
         this._stderr := stderr
         this._fix := fix
         this._applySuggestions := applySuggestions
+        this._failOn := failOn
         this.run := LintRun(cfg)
 
         this.matcher := GlobMatcher(cfg.includes, cfg.excludes)
@@ -255,14 +258,20 @@ export class LintSession {
     }
 
     /**
-     * 2 if any file failed to lint, 1 if any finding fired, else 0. A finding that
-     * was fixed is no longer on the run, so it doesn't count.
+     * 2 if any file failed to lint, 1 if any finding at or above `failOn` fired,
+     * else 0. A finding that was fixed is no longer on the run, so it doesn't count.
+     * A file that failed to lint fails the run even under `failOn: "never"`
      */
     exitCode {
         get {
             if this.run.ErrorCount > 0
                 return 2
-            return this.run.DiagnosticCount > 0 ? 1 : 0
+            switch this._failOn, "Off" {
+                case "never": return 0
+                case "warn":  return this.run.DiagnosticCount > 0 ? 1 : 0
+                case "error": return this.run.CountBySeverity("error") > 0 ? 1 : 0
+                default: throw ValueError("Invalid failOn: " this._failOn, -1)
+            }
         }
     }
 }

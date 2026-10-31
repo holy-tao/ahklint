@@ -20,10 +20,10 @@ class CliArgs {
     applySuggestions := false
     watch := false
     profile := false
+    failOn := "error"
 }
 
 Die(message) {
-    ShowHelp()
     Console.err.WriteLine(Red("ahklint: ") . message)
     ExitApp(2)
 }
@@ -77,6 +77,7 @@ ShowHelp() {
     opt(["-w", "--watch"], "Lint again whenever the file or directory changes")
     opt(["--apply-suggestions"], "Apply suggested fixes to linted files (may be incorrect)")
     opt(["--profile"], "Report where the time went, per phase and per lint, to stderr")
+    opt(["--fail-on"], "Configure which kinds of diagnostics exit non-0 (error, warn, never)", "error")
 
     Console.Out.WriteLine("")
     opt(["--no-color"], "Disable ANSI colors. Also respects the NO_COLOR environment variable")
@@ -128,6 +129,13 @@ ParseArgs(argv) {
                 out.watch := true
             case "--profile":
                 out.profile := true
+            case "--fail-on":
+                if i == argv.Length
+                    Die("--fail-on requires an argument")
+                value := argv[++i]
+                if value != "error" && value != "warn" && value != "never"
+                    Die("--fail-on must be one of 'error', 'warn', or 'never'. Got: '" value "'")
+                out.failOn := value
             default:
                 if SubStr(arg, 1, 1) == "-"
                     Die("unknown option: " arg)

@@ -29,7 +29,8 @@ main()
  * Resolves the arguments, config and formatters, then hands the linting itself
  * to a LintSession.
  *
- * Exit code: 2 if any file failed to lint, 1 if any finding fired, else 0. With
+ * Exit code: 2 if any file failed to lint, 1 if any finding at or above `--fail-on`
+ * fired, else 0. With
  * `--watch` the process keeps running until it is interrupted.
  */
 Main() {
@@ -74,7 +75,7 @@ Main() {
     if args.sarifPath != ""
         formatters.Push(OpenSarifFormatter(args.sarifPath, Console.Err))
 
-    session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions, prof)
+    session := LintSession(cfg, formatters, Console.Err, args.fix, args.applySuggestions, args.failOn, prof)
     session.LintAll(paths)
     session.Report()
 
