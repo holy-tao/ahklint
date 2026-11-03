@@ -30,9 +30,8 @@ export class Linter extends Visitor {
     /**
      * Ignore directives in this linter's source, mapped from line number
      * to an array of the ignored lints' ids
-     * TODO: introduce a meta-lint for unused ignore directives
      *
-     * @type {Map<Integer, Array<String>>}
+     * @type {Map<Integer, Array<{id: String, node: Node, used: bool}>>}
      */
     ignores := Map()
 
@@ -115,11 +114,15 @@ export class Linter extends Visitor {
                 %compiledQuery.GetCaptureNameForId(capture.index)% := capture.node
             }
 
-            ignoredIds := StrSplit(args.text, " ", " `r`n`t").Filter(str => str)
+            ignoredIds := StrSplit(args.text, " ", " `r`n`t")
+                .Filter(str => str)
+                .Map(str => {id: str, node: directive, used: false})
 
             switch name.text, "off" {
                 case "ahklint-ignore": ignores[directive.startPoint.row] := ignoredIds
                 case "ahklint-ignore-next-line": ignores[directive.startPoint.row + 1] := ignoredIds
+                default:
+                    throw ValueError("Unhandled ahklint directive: " name.text)
             }
         }
 
@@ -144,8 +147,14 @@ export class Linter extends Visitor {
      * @returns {Integer} 1 if the lint is ignored, 0 if not
      */
     IsIgnored(meta, node) {
-        return this.ignores.Get(node.startPoint.row, [])
-            .Any(id => id = meta.id)
+        hasMatch := false
+        for directive in this.ignores.Get(node.startPoint.row, []) {
+            if directive.id != meta.id
+                continue
+            directive.used := true
+            hasMatch := true
+        }
+        return hasMatch
     }
 
     /**
@@ -159,6 +168,15 @@ export class Linter extends Visitor {
      *        `{ startByte, endByte, newText }` - see Diagnostic
      */
     Report(meta, node, message, fixes?) {
+        ;@Ahk2Exe-IgnoreBegin
+        if type(node) != "Node" {
+            throw TypeError("Parameter ``node`` should be a Node but got a(n) " type(node), , node)
+        }
+        if !(message is String) {
+            throw TypeError("Parameter ``message`` should be a String but got a(n) " type(message), , message)
+        }
+        ;@Ahk2Exe-IgnoreEnd
+
         if this.IsIgnored(meta, node)
             return
 
