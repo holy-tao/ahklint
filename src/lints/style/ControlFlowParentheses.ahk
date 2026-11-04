@@ -56,6 +56,9 @@ class ControlFlowParentheses {
      */
     CheckSimple(linter, node, fieldName) {
         head := node.GetChildByFieldName(fieldName)
+        if head.IsNull
+            return
+
         isParens := head.type == "parenthesized_expression"
 
         if isParens && this.style = "forbidden" {
